@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>প্রমোশনের মূল্য হ্রাস (Promotion Value Erosion) – ২০১৫ vs ২০২৬</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --accent: #38bdf8;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --green: #4ade80;
+    --red: #f87171;
+    --yellow: #fde047;
+    --border: #334155;
+    --orange: #fb923c;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    padding: 20px 16px 40px;
+  }
+  h1 {
+    text-align: center;
+    font-size: 1.4rem;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  .subtitle {
+    text-align: center;
+    color: var(--muted);
+    margin-bottom: 20px;
+    font-size: 0.92rem;
+  }
+
+  .info-box {
+    max-width: 900px;
+    margin: 0 auto 22px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-size: 0.88rem;
+    color: var(--muted);
+  }
+  .info-box strong { color: var(--yellow); }
+
+  .summary {
+    max-width: 900px;
+    margin: 0 auto 24px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+  }
+  .summary-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+  }
+  .summary-card .label { font-size: 0.8rem; color: var(--muted); }
+  .summary-card .value {
+    font-size: 1.3rem;
+    font-weight: 800;
+    margin-top: 4px;
+  }
+  .value.green { color: var(--green); }
+  .value.red { color: var(--red); }
+  .value.blue { color: var(--accent); }
+  .value.yellow { color: var(--yellow); }
+
+  .table-wrap {
+    overflow-x: auto;
+    max-width: 960px;
+    margin: 0 auto;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 780px;
+  }
+  th, td {
+    padding: 10px 12px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+  th {
+    background: #0f172a;
+    color: var(--accent);
+    font-size: 0.82rem;
+    position: sticky;
+    top: 0;
+  }
+  tr:nth-child(even) { background: #1a2332; }
+  tr:hover { background: #243044; }
+
+  .promo { font-weight: 700; color: var(--accent); white-space: nowrap; }
+  .pct-2015 { color: var(--muted); font-weight: 600; }
+  .pct-2026 { font-weight: 700; }
+  .pct-2026.down { color: var(--red); }
+  .pct-2026.up { color: var(--green); }
+  .erosion {
+    font-weight: 800;
+    font-size: 1.05rem;
+  }
+  .erosion.neg { color: var(--red); }
+  .erosion.pos { color: var(--green); }
+  .taka { font-size: 0.85rem; color: var(--muted); }
+
+  .note {
+    text-align: center;
+    margin-top: 18px;
+    font-size: 0.82rem;
+    color: var(--muted);
+    max-width: 860px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  @media (max-width: 600px) {
+    h1 { font-size: 1.2rem; }
+    th, td { padding: 8px 6px; font-size: 0.78rem; }
+  }
+</style>
+</head>
+<body>
+
+<h1>প্রমোশনের মূল্য হ্রাস</h1>
+<p class="subtitle">এক ধাপ প্রমোশনে বেতন বৃদ্ধির হার — ২০১৫ vs ২০২৬</p>
+
+<div class="info-box">
+  <strong>কী দেখাচ্ছে:</strong> নিম্ন গ্রেড থেকে এক ধাপ উচ্চতর গ্রেডে প্রমোশন পেলে 
+  প্রারম্ভিক বেতন কত % বাড়ত (২০১৫) এবং এখন কত % বাড়ে (২০২৬)।<br>
+  <strong>ঋণাত্মক erosion</strong> মানে প্রমোশনের আপেক্ষিক মূল্য কমে গেছে — 
+  নিম্ন গ্রেডের কর্মচারীর জন্য প্রমোশন এখন আগের চেয়ে কম আকর্ষণীয়।
+</div>
+
+<div class="summary" id="summary"></div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>প্রমোশন</th>
+        <th>২০১৫<br>প্রারম্ভিক</th>
+        <th>২০১৫<br>বৃদ্ধি %</th>
+        <th>২০২৬<br>প্রারম্ভিক</th>
+        <th>২০২৬<br>বৃদ্ধি %</th>
+        <th>মূল্য পরিবর্তন<br>(Erosion)</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<p class="note">
+  হিসাব শুধুমাত্র <strong>প্রারম্ভিক বেতন</strong> ভিত্তিক। 
+  প্রমোশনের সময় বাস্তবে ধাপ নির্ধারণের নিয়ম আলাদা হতে পারে, 
+  তবে গ্রেড-টু-গ্রেড ব্যবধানের পরিবর্তন স্পষ্টভাবে বোঝা যায়।
+</p>
+
+<script>
+const start2015 = {
+  1: 78000, 2: 66000, 3: 56500, 4: 50000, 5: 43000,
+  6: 35500, 7: 29000, 8: 23000, 9: 22000, 10: 16000,
+  11: 12500, 12: 11300, 13: 11000, 14: 10200, 15: 9700,
+  16: 9300, 17: 9000, 18: 8800, 19: 8500, 20: 8250
+};
+
+const start2026 = {
+  1: 156000, 2: 132000, 3: 113000, 4: 100000, 5: 86000,
+  6: 71000, 7: 58000, 8: 46000, 9: 44000, 10: 32000,
+  11: 25000, 12: 24300, 13: 24000, 14: 23500, 15: 22800,
+  16: 21900, 17: 21400, 18: 21000, 19: 20500, 20: 20000
+};
+
+function format(n) {
+  return n.toLocaleString('en-IN');
+}
+
+function render() {
+  const rows = [];
+  let totalErosion = 0;
+  let countDown = 0;
+
+  for (let g = 20; g >= 2; g--) {
+    const from2015 = start2015[g];
+    const to2015   = start2015[g - 1];
+    const pct2015  = ((to2015 - from2015) / from2015) * 100;
+
+    const from2026 = start2026[g];
+    const to2026   = start2026[g - 1];
+    const pct2026  = ((to2026 - from2026) / from2026) * 100;
+
+    const erosion = pct2026 - pct2015; // negative = value decreased
+
+    rows.push({
+      from: g,
+      to: g - 1,
+      from2015, to2015, pct2015,
+      from2026, to2026, pct2026,
+      erosion
+    });
+
+    totalErosion += erosion;
+    if (erosion < 0) countDown++;
+  }
+
+  const avgErosion = totalErosion / rows.length;
+
+  document.getElementById('summary').innerHTML = `
+    <div class="summary-card">
+      <div class="label">গড় প্রমোশন বৃদ্ধি (২০১৫)</div>
+      <div class="value blue">${(rows.reduce((s,r)=>s+r.pct2015,0)/rows.length).toFixed(1)}%</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">গড় প্রমোশন বৃদ্ধি (২০২৬)</div>
+      <div class="value blue">${(rows.reduce((s,r)=>s+r.pct2026,0)/rows.length).toFixed(1)}%</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">গড় মূল্য পরিবর্তন</div>
+      <div class="value ${avgErosion < 0 ? 'red' : 'green'}">${avgErosion >= 0 ? '+' : ''}${avgErosion.toFixed(1)}%</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">মূল্য কমেছে এমন প্রমোশন</div>
+      <div class="value red">${countDown} / ${rows.length}</div>
+    </div>
+  `;
+
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+
+  rows.forEach(r => {
+    const erosionClass = r.erosion < -0.05 ? 'neg' : (r.erosion > 0.05 ? 'pos' : '');
+    const pct2026Class = r.pct2026 < r.pct2015 ? 'down' : 'up';
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="promo">${r.from} → ${r.to}</td>
+      <td>
+        ${format(r.from2015)} → ${format(r.to2015)}
+        <div class="taka">+${format(r.to2015 - r.from2015)}</div>
+      </td>
+      <td class="pct-2015">${r.pct2015.toFixed(1)}%</td>
+      <td>
+        ${format(r.from2026)} → ${format(r.to2026)}
+        <div class="taka">+${format(r.to2026 - r.from2026)}</div>
+      </td>
+      <td class="pct-2026 ${pct2026Class}">${r.pct2026.toFixed(1)}%</td>
+      <td class="erosion ${erosionClass}">
+        ${r.erosion >= 0 ? '+' : ''}${r.erosion.toFixed(1)}%
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+render();
+</script>
+</body>
+</html>

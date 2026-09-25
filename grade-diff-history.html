@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ঐতিহাসিক পে-স্কেল – গ্রেডভিত্তিক প্রারম্ভিক বেতন ব্যবধান</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --accent: #38bdf8;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --green: #4ade80;
+    --border: #334155;
+    --yellow: #fde047;
+    --red: #f87171;
+    --selected: #1e3a8a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    padding: 16px;
+  }
+  h1 {
+    text-align: center;
+    font-size: 1.35rem;
+    margin-bottom: 4px;
+    color: var(--accent);
+  }
+  .subtitle {
+    text-align: center;
+    color: var(--muted);
+    margin-bottom: 14px;
+    font-size: 0.9rem;
+  }
+
+  .scale-select-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .scale-select-wrap label {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--muted);
+  }
+  select {
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    cursor: pointer;
+  }
+  select:focus { outline: none; border-color: var(--accent); }
+
+  .main-area {
+    position: relative;
+    max-width: 980px;
+    margin: 0 auto 20px;
+    display: flex;
+    gap: 0;
+  }
+  .table-wrap {
+    overflow-x: auto;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    flex: 1;
+    min-width: 0;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 620px;
+  }
+  th, td {
+    padding: 9px 12px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+  th {
+    background: #0f172a;
+    color: var(--accent);
+    position: sticky;
+    top: 0;
+    font-weight: 600;
+    font-size: 0.82rem;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+  }
+  th:hover { background: #1e293b; }
+  th .sort-icon {
+    font-size: 0.7rem;
+    margin-left: 3px;
+    opacity: 0.5;
+  }
+  th.sorted .sort-icon { opacity: 1; color: var(--yellow); }
+
+  tr:nth-child(even) { background: #1a2332; }
+  tr:hover { background: #243044; cursor: pointer; }
+  tr.selected {
+    background: var(--selected) !important;
+    box-shadow: inset 0 0 0 2px var(--accent);
+  }
+
+  .grade { font-weight: 700; color: var(--accent); white-space: nowrap; }
+  .salary { font-weight: 600; font-size: 0.95rem; }
+
+  .diff-cell { font-weight: 700; }
+  .diff-amount {
+    font-size: 0.85rem;
+    color: var(--muted);
+    display: block;
+  }
+  .diff-pct {
+    font-size: 1.15rem;
+    font-weight: 800;
+    display: block;
+    margin-top: 1px;
+  }
+  .pos .diff-pct { color: var(--green); }
+  .neg .diff-pct { color: var(--red); }
+  .pos .diff-amount { color: #86efac; }
+  .neg .diff-amount { color: #fca5a5; }
+
+  .connector-panel {
+    width: 130px;
+    position: relative;
+    flex-shrink: 0;
+  }
+  #connectorSvg {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    overflow: visible;
+  }
+  .diff-label {
+    position: absolute;
+    background: #0f172a;
+    border: 2px solid var(--yellow);
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 0.8rem;
+    color: var(--text);
+    white-space: nowrap;
+    pointer-events: none;
+    transform: translate(-20%, -50%);
+    z-index: 5;
+    display: none;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+    text-align: center;
+    line-height: 1.45;
+  }
+  .diff-label .title {
+    color: var(--yellow);
+    font-weight: 800;
+    font-size: 0.95rem;
+    margin-bottom: 5px;
+  }
+  .diff-label .val { color: var(--green); font-weight: 700; }
+
+  .tooltip {
+    position: absolute;
+    background: #1e293b;
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.82rem;
+    color: var(--text);
+    pointer-events: none;
+    z-index: 100;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+    max-width: 320px;
+    line-height: 1.5;
+    display: none;
+  }
+  .tooltip strong { color: var(--accent); }
+  .tooltip .oy { color: var(--yellow); font-weight: 700; }
+
+  .note {
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--muted);
+    max-width: 860px;
+    margin: 0 auto;
+  }
+
+  @media (max-width: 700px) {
+    .connector-panel { width: 90px; }
+    .diff-pct { font-size: 1rem; }
+    th, td { padding: 7px 6px; font-size: 0.78rem; }
+  }
+</style>
+</head>
+<body>
+
+<h1>ঐতিহাসিক পে-স্কেল – প্রারম্ভিক বেতন ব্যবধান</h1>
+<p class="subtitle">১৯৭৩ থেকে ২০২৬ পর্যন্ত সব স্কেলের গ্রেড-টু-গ্রেড প্রারম্ভিক বেতনের পার্থক্য</p>
+
+<div class="scale-select-wrap">
+  <label for="scaleSelect">পে-স্কেল নির্বাচন:</label>
+  <select id="scaleSelect">
+    <option value="2026">২০২৬ (৯ম)</option>
+    <option value="2015">২০১৫ (৮ম)</option>
+    <option value="2009">২০০৯ (৭ম)</option>
+    <option value="2005">২০০৫ (৬ষ্ঠ)</option>
+    <option value="1997">১৯৯৭ (৫ম)</option>
+    <option value="1991">১৯৯১ (৪র্থ)</option>
+    <option value="1985">১৯৮৫ (৩য়)</option>
+    <option value="1977">১৯৭৭ (২য়)</option>
+    <option value="1973">১৯৭৩ (১ম)</option>
+  </select>
+</div>
+
+<div class="main-area" id="mainArea">
+  <div class="table-wrap" id="tableWrap">
+    <table id="diffTable">
+      <thead>
+        <tr>
+          <th data-col="0" class="sorted">গ্রেড <span class="sort-icon">▲</span></th>
+          <th data-col="1">প্রারম্ভিক (৳) <span class="sort-icon">▲</span></th>
+          <th data-col="2">পরবর্তী প্রারম্ভিক <span class="sort-icon">▲</span></th>
+          <th data-col="3">প্রারম্ভিক ব্যবধান <span class="sort-icon">▲</span></th>
+        </tr>
+      </thead>
+      <tbody id="diffBody"></tbody>
+    </table>
+  </div>
+  <div class="connector-panel" id="connectorPanel">
+    <svg id="connectorSvg"></svg>
+    <div class="diff-label" id="diffLabel"></div>
+  </div>
+</div>
+
+<p class="note">
+  হেডার ক্লিক → সাজান · সারি ক্লিক → সিলেক্ট/ডেসিলেক্ট (সর্বোচ্চ ২টি) · 
+  দুই সারি সিলেক্ট করলে ডানদিকে সেই দুই গ্রেডের প্রারম্ভিক বেতনের সরাসরি পার্থক্য দেখাবে · 
+  শুধুমাত্র <strong>প্রারম্ভিক ধাপ</strong> ব্যবহার করা হয়েছে
+</p>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+// Cleaned historical starting (first step) salaries
+// Sources: bddata.org + official gazettes. Empty = data not available / grade not active
+const historical = {
+  1973: {
+    1: 2000, 3: 1475, 5: 1150, 7: 800, 9: 475,
+    11: 375, 13: 310, 15: 220, 17: 145, 19: 130
+  },
+  1977: {
+    1: 3000, 2: 2850, 3: 2350, 4: 2100, 5: 1850,
+    6: 1700, 7: 1400, 8: 1150, 9: 900, 10: 750,
+    11: 625, 12: 470, 13: 425, 14: 400, 15: 370,
+    16: 325, 17: 300, 18: 275, 19: 250, 20: 240
+  },
+  1985: {
+    1: 6000, 2: 5700, 3: 4750, 4: 4200, 5: 3700,
+    6: 2800, 7: 2400, 8: 1850, 9: 1650, 10: 1350,
+    11: 1000, 12: 900, 13: 850, 14: 800, 15: 750,
+    16: 700, 17: 650, 18: 600, 19: 550, 20: 500
+  },
+  1991: {
+    1: 10000, 2: 8600, 3: 7800, 4: 7100, 5: 6300,
+    6: 4800, 7: 4100, 8: 3200, 9: 2850, 10: 2300,
+    11: 1725, 12: 1550, 13: 1475, 14: 1375, 15: 1300,
+    16: 1200, 17: 1125, 18: 1050, 19: 975, 20: 900
+  },
+  1997: {
+    1: 15000, 2: 12900, 3: 11700, 4: 10700, 5: 9500,
+    6: 7200, 7: 6150, 8: 4800, 9: 4300, 10: 3400,
+    11: 2550, 12: 2375, 13: 2250, 14: 2100, 15: 1975,
+    16: 1875, 17: 1750, 18: 1625, 19: 1560, 20: 1500
+  },
+  2005: {
+    1: 23000, 2: 19300, 3: 16800, 4: 15000, 5: 13750,
+    6: 11000, 7: 9000, 8: 7400, 9: 6800, 10: 5100,
+    11: 4100, 12: 3700, 13: 3500, 14: 3300, 15: 3100,
+    16: 3000, 17: 2850, 18: 2600, 19: 2500, 20: 2400
+  },
+  2009: {
+    1: 40000, 2: 33500, 3: 29000, 4: 25750, 5: 22250,
+    6: 18500, 7: 15000, 8: 12000, 9: 11000, 10: 8000,
+    11: 6400, 12: 5900, 13: 5500, 14: 5200, 15: 4900,
+    16: 4700, 17: 4500, 18: 4400, 19: 4250, 20: 4100
+  },
+  2015: {
+    1: 78000, 2: 66000, 3: 56500, 4: 50000, 5: 43000,
+    6: 35500, 7: 29000, 8: 23000, 9: 22000, 10: 16000,
+    11: 12500, 12: 11300, 13: 11000, 14: 10200, 15: 9700,
+    16: 9300, 17: 9000, 18: 8800, 19: 8500, 20: 8250
+  },
+  2026: {
+    1: 156000, 2: 132000, 3: 113000, 4: 100000, 5: 86000,
+    6: 71000, 7: 58000, 8: 46000, 9: 44000, 10: 32000,
+    11: 25000, 12: 24300, 13: 24000, 14: 23500, 15: 22800,
+    16: 21900, 17: 21400, 18: 21000, 19: 20500, 20: 20000
+  }
+};
+
+let currentScale = 2026;
+let sortCol = 0;
+let sortAsc = true;
+let selected = [];
+
+function format(n) {
+  return n.toLocaleString('en-IN');
+}
+
+function getAvailableGrades(scale) {
+  return Object.keys(historical[scale]).map(Number).sort((a,b) => a - b);
+}
+
+function buildRows() {
+  const data = historical[currentScale];
+  const grades = getAvailableGrades(currentScale);
+  const rows = [];
+
+  for (let i = 0; i < grades.length - 1; i++) {
+    const lowerG = grades[i + 1]; // higher number = lower rank
+    const higherG = grades[i];     // lower number = higher rank
+
+    // We want pairs like 20→19, 19→18 ... so lowerG > higherG
+    if (lowerG <= higherG) continue;
+
+    const lowerPay = data[lowerG];
+    const higherPay = data[higherG];
+    if (!lowerPay || !higherPay) continue;
+
+    const diff = higherPay - lowerPay;
+    const pct = (diff / lowerPay) * 100;
+
+    rows.push({
+      from: lowerG,
+      to: higherG,
+      lowerPay,
+      higherPay,
+      diff,
+      pct
+    });
+  }
+  return rows;
+}
+
+function sortRows(rows) {
+  rows.sort((a, b) => {
+    let va, vb;
+    switch (sortCol) {
+      case 0: va = a.from; vb = b.from; break;
+      case 1: va = a.lowerPay; vb = b.lowerPay; break;
+      case 2: va = a.higherPay; vb = b.higherPay; break;
+      case 3: va = a.diff; vb = b.diff; break;
+      default: va = a.from; vb = b.from;
+    }
+    return sortAsc ? va - vb : vb - va;
+  });
+  return rows;
+}
+
+function renderTable() {
+  let rows = buildRows();
+  rows = sortRows(rows);
+
+  const tbody = document.getElementById('diffBody');
+  tbody.innerHTML = '';
+
+  rows.forEach(r => {
+    const isSelected = selected.includes(r.from);
+    const cls = r.diff >= 0 ? 'pos' : 'neg';
+
+    const tr = document.createElement('tr');
+    if (isSelected) tr.classList.add('selected');
+    tr.dataset.g = r.from;
+
+    tr.innerHTML = `
+      <td class="grade">${r.from} → ${r.to}</td>
+      <td class="salary">${format(r.lowerPay)}</td>
+      <td class="salary">${format(r.higherPay)}</td>
+      <td class="diff-cell ${cls}">
+        <span class="diff-amount">${r.diff >= 0 ? '+' : ''}${format(r.diff)}</span>
+        <span class="diff-pct">(${r.pct.toFixed(1)}%)</span>
+      </td>
+    `;
+
+    tr.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleSelect(r.from);
+    });
+
+    tr.addEventListener('mouseenter', (e) => showTooltip(e, r));
+    tr.addEventListener('mousemove', moveTooltip);
+    tr.addEventListener('mouseleave', hideTooltip);
+
+    tbody.appendChild(tr);
+  });
+
+  // sort icons
+  document.querySelectorAll('th').forEach(th => {
+    const col = +th.dataset.col;
+    const icon = th.querySelector('.sort-icon');
+    if (col === sortCol) {
+      th.classList.add('sorted');
+      icon.textContent = sortAsc ? '▲' : '▼';
+    } else {
+      th.classList.remove('sorted');
+      icon.textContent = '▲';
+    }
+  });
+
+  drawConnector();
+}
+
+function toggleSelect(g) {
+  const idx = selected.indexOf(g);
+  if (idx >= 0) selected.splice(idx, 1);
+  else {
+    selected.push(g);
+    if (selected.length > 2) selected.shift();
+  }
+  renderTable();
+}
+
+function showTooltip(e, r) {
+  const tip = document.getElementById('tooltip');
+  tip.innerHTML = `
+    <strong class="oy">${currentScale} স্কেল</strong><br><br>
+    <strong>গ্রেড ${r.from} → ${r.to}</strong><br>
+    প্রারম্ভিক: ${format(r.lowerPay)} → ${format(r.higherPay)}<br>
+    ব্যবধান: ${r.diff >= 0 ? '+' : ''}${format(r.diff)} (${r.pct.toFixed(1)}%)
+  `;
+  tip.style.display = 'block';
+  moveTooltip(e);
+}
+
+function moveTooltip(e) {
+  const tip = document.getElementById('tooltip');
+  tip.style.left = (e.pageX + 14) + 'px';
+  tip.style.top  = (e.pageY + 14) + 'px';
+}
+
+function hideTooltip() {
+  document.getElementById('tooltip').style.display = 'none';
+}
+
+function drawConnector() {
+  const svg = document.getElementById('connectorSvg');
+  const label = document.getElementById('diffLabel');
+  const panel = document.getElementById('connectorPanel');
+  const tableWrap = document.getElementById('tableWrap');
+
+  svg.innerHTML = '';
+  label.style.display = 'none';
+
+  if (selected.length !== 2) return;
+
+  const rows = Array.from(document.querySelectorAll('#diffBody tr'));
+  const tr1 = rows.find(tr => +tr.dataset.g === selected[0]);
+  const tr2 = rows.find(tr => +tr.dataset.g === selected[1]);
+  if (!tr1 || !tr2) return;
+
+  const panelRect = panel.getBoundingClientRect();
+  const r1 = tr1.getBoundingClientRect();
+  const r2 = tr2.getBoundingClientRect();
+
+  const y1 = r1.top + r1.height/2 - panelRect.top;
+  const y2 = r2.top + r2.height/2 - panelRect.top;
+  const xStart = 8;
+  const xMid  = 55;
+
+  const tableHeight = tableWrap.scrollHeight;
+  svg.setAttribute('height', tableHeight);
+  panel.style.height = tableHeight + 'px';
+
+  // Smooth curve
+  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  path.setAttribute('d', `M ${xStart} ${y1} C ${xMid} ${y1}, ${xMid} ${y2}, ${xStart} ${y2}`);
+  path.setAttribute('fill', 'none');
+  path.setAttribute('stroke', '#fde047');
+  path.setAttribute('stroke-width', '2.8');
+  path.setAttribute('stroke-linecap', 'round');
+  svg.appendChild(path);
+
+  // Arrow heads
+  function arrow(x, y) {
+    const a = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+    a.setAttribute('points', `${x},${y} ${x+9},${y-6.3} ${x+9},${y+6.3}`);
+    a.setAttribute('fill', '#fde047');
+    svg.appendChild(a);
+  }
+  arrow(xStart, y1);
+  arrow(xStart, y2);
+
+  // Compare the two selected grades (left side)
+  const data = historical[currentScale];
+  const gA = Math.min(selected[0], selected[1]);
+  const gB = Math.max(selected[0], selected[1]);
+  const payA = data[gA];
+  const payB = data[gB];
+  if (!payA || !payB) return;
+
+  const diff = payA - payB;
+  const pct = ((diff / payB) * 100).toFixed(1);
+
+  label.innerHTML = `
+    <div class="title">গ্রেড ${gB} vs ${gA}</div>
+    <div>${format(payB)} → ${format(payA)}</div>
+    <div class="val">Δ ${format(Math.abs(diff))} (${pct}%)</div>
+  `;
+  label.style.display = 'block';
+  label.style.left = (xMid + 8) + 'px';
+  label.style.top  = ((y1 + y2) / 2) + 'px';
+}
+
+// Events
+document.querySelectorAll('th').forEach(th => {
+  th.addEventListener('click', () => {
+    const col = +th.dataset.col;
+    if (sortCol === col) sortAsc = !sortAsc;
+    else { sortCol = col; sortAsc = true; }
+    renderTable();
+  });
+});
+
+document.getElementById('scaleSelect').addEventListener('change', function() {
+  currentScale = +this.value;
+  selected = [];
+  renderTable();
+});
+
+document.getElementById('tableWrap').addEventListener('scroll', drawConnector);
+window.addEventListener('resize', drawConnector);
+
+renderTable();
+</script>
+</body>
+</html>
