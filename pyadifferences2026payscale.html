@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>গ্রেডভিত্তিক বেতন ব্যবধান (২০১৫ ↔ ২০২৬)</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --accent: #38bdf8;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --green: #4ade80;
+    --border: #334155;
+    --yellow: #fde047;
+    --red: #f87171;
+    --selected: #1e3a8a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    padding: 16px;
+  }
+  h1 {
+    text-align: center;
+    font-size: 1.35rem;
+    margin-bottom: 4px;
+    color: var(--accent);
+  }
+  .subtitle {
+    text-align: center;
+    color: var(--muted);
+    margin-bottom: 14px;
+    font-size: 0.9rem;
+  }
+
+  .switch-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .switch-label {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--muted);
+    transition: color 0.2s;
+  }
+  .switch-label.active { color: var(--accent); }
+  .switch {
+    position: relative;
+    width: 56px;
+    height: 28px;
+  }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background: #475569;
+    border-radius: 28px;
+    transition: 0.3s;
+  }
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 22px; width: 22px;
+    left: 3px; bottom: 3px;
+    background: white;
+    border-radius: 50%;
+    transition: 0.3s;
+  }
+  input:checked + .slider { background: var(--accent); }
+  input:checked + .slider:before { transform: translateX(28px); }
+
+  .main-area {
+    position: relative;
+    max-width: 1140px;
+    margin: 0 auto 20px;
+    display: flex;
+    gap: 0;
+  }
+  .table-wrap {
+    overflow-x: auto;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    flex: 1;
+    min-width: 0;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 700px;
+  }
+  th, td {
+    padding: 9px 10px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+  th {
+    background: #0f172a;
+    color: var(--accent);
+    position: sticky;
+    top: 0;
+    font-weight: 600;
+    font-size: 0.82rem;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+  }
+  th:hover { background: #1e293b; }
+  th .sort-icon {
+    font-size: 0.7rem;
+    margin-left: 3px;
+    opacity: 0.5;
+  }
+  th.sorted .sort-icon { opacity: 1; color: var(--yellow); }
+
+  tr:nth-child(even) { background: #1a2332; }
+  tr:hover { background: #243044; cursor: pointer; }
+  tr.selected {
+    background: var(--selected) !important;
+    box-shadow: inset 0 0 0 2px var(--accent);
+  }
+
+  .grade { font-weight: 700; color: var(--accent); white-space: nowrap; }
+  .salary { font-weight: 600; font-size: 0.92rem; }
+
+  .diff-cell { font-weight: 700; }
+  .diff-amount {
+    font-size: 0.85rem;
+    color: var(--muted);
+    display: block;
+  }
+  .diff-pct {
+    font-size: 1.15rem;
+    font-weight: 800;
+    display: block;
+    margin-top: 1px;
+  }
+  .pos .diff-pct { color: var(--green); }
+  .neg .diff-pct { color: var(--red); }
+  .pos .diff-amount { color: #86efac; }
+  .neg .diff-amount { color: #fca5a5; }
+
+  .connector-panel {
+    width: 130px;
+    position: relative;
+    flex-shrink: 0;
+  }
+  #connectorSvg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: visible;
+  }
+  .diff-label {
+    position: absolute;
+    background: #0f172a;
+    border: 2px solid var(--yellow);
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 0.8rem;
+    color: var(--text);
+    white-space: nowrap;
+    pointer-events: none;
+    transform: translate(-20%, -50%);
+    z-index: 5;
+    display: none;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+    text-align: center;
+    line-height: 1.45;
+  }
+  .diff-label .title {
+    color: var(--yellow);
+    font-weight: 800;
+    font-size: 0.95rem;
+    margin-bottom: 5px;
+  }
+  .diff-label .line { margin: 4px 0; }
+  .diff-label .val {
+    color: var(--green);
+    font-weight: 700;
+  }
+
+  .tooltip {
+    position: absolute;
+    background: #1e293b;
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.82rem;
+    color: var(--text);
+    pointer-events: none;
+    z-index: 100;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+    max-width: 340px;
+    line-height: 1.5;
+    display: none;
+  }
+  .tooltip strong { color: var(--accent); }
+  .tooltip .oy { color: var(--yellow); font-weight: 700; }
+
+  .note {
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--muted);
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  @media print {
+    body { background: white; color: black; }
+    .switch-wrap, .tooltip, .connector-panel { display: none !important; }
+    th { background: #eee !important; color: black !important; cursor: default; }
+    .diff-pct { color: black !important; font-weight: 900; }
+  }
+
+  @media (max-width: 700px) {
+    .connector-panel { width: 90px; }
+    .diff-pct { font-size: 1rem; }
+    th, td { padding: 7px 5px; font-size: 0.75rem; }
+    .diff-label { font-size: 0.72rem; padding: 6px 8px; }
+  }
+</style>
+</head>
+<body>
+
+<h1>গ্রেডভিত্তিক বেতন ব্যবধান</h1>
+<p class="subtitle">দুই সারি সিলেক্ট করুন → ডানদিকে সেই রেঞ্জের সর্বোচ্চ ও সর্বনিম্ন গ্রেডের সরাসরি পার্থক্য দেখাবে</p>
+
+<div class="switch-wrap">
+  <span class="switch-label" id="label2015">২০১৫ স্কেল</span>
+  <label class="switch">
+    <input type="checkbox" id="yearToggle" checked>
+    <span class="slider"></span>
+  </label>
+  <span class="switch-label active" id="label2026">২০২৬ স্কেল</span>
+</div>
+
+<div class="main-area" id="mainArea">
+  <div class="table-wrap" id="tableWrap">
+    <table id="diffTable">
+      <thead>
+        <tr>
+          <th data-col="0" class="sorted">গ্রেড <span class="sort-icon">▲</span></th>
+          <th data-col="1">প্রারম্ভিক (৳) <span class="sort-icon">▲</span></th>
+          <th data-col="2">পরবর্তী প্রারম্ভিক <span class="sort-icon">▲</span></th>
+          <th data-col="3">প্রারম্ভিক ব্যবধান <span class="sort-icon">▲</span></th>
+          <th data-col="4">সর্বোচ্চ (৳) <span class="sort-icon">▲</span></th>
+          <th data-col="5">পরবর্তী সর্বোচ্চ <span class="sort-icon">▲</span></th>
+          <th data-col="6">সর্বোচ্চ ব্যবধান <span class="sort-icon">▲</span></th>
+        </tr>
+      </thead>
+      <tbody id="diffBody"></tbody>
+    </table>
+  </div>
+  <div class="connector-panel" id="connectorPanel">
+    <svg id="connectorSvg"></svg>
+    <div class="diff-label" id="diffLabel"></div>
+  </div>
+</div>
+
+<p class="note">
+  হেডার ক্লিক → সাজান · সারি ক্লিক → সিলেক্ট/ডেসিলেক্ট (সর্বোচ্চ ২টি) · 
+  দুই সারি সিলেক্ট করলে ডানদিকে <strong style="color:#fde047">সেই রেঞ্জের সর্বোচ্চ ও সর্বনিম্ন গ্রেড</strong> এর প্রারম্ভিক ও সর্বোচ্চ বেতনের পার্থক্য দেখাবে
+</p>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+const scales = {
+  2015: {
+    1:{start:78000,end:78000}, 2:{start:66000,end:76490}, 3:{start:56500,end:74400},
+    4:{start:50000,end:71200}, 5:{start:43000,end:69850}, 6:{start:35500,end:67010},
+    7:{start:29000,end:63410}, 8:{start:23000,end:55470}, 9:{start:22000,end:53060},
+    10:{start:16000,end:38640},11:{start:12500,end:30230},12:{start:11300,end:27300},
+    13:{start:11000,end:26590},14:{start:10200,end:24680},15:{start:9700,end:23490},
+    16:{start:9300,end:22490},17:{start:9000,end:21800},18:{start:8800,end:21310},
+    19:{start:8500,end:20570},20:{start:8250,end:20010}
+  },
+  2026: {
+    1:{start:156000,end:156000},2:{start:132000,end:153000},3:{start:113000,end:148800},
+    4:{start:100000,end:142400},5:{start:86000,end:139700},6:{start:71000,end:134000},
+    7:{start:58000,end:126800},8:{start:46000,end:110800},9:{start:44000,end:105900},
+    10:{start:32000,end:77300},11:{start:25000,end:60500},12:{start:24300,end:58700},
+    13:{start:24000,end:58000},14:{start:23500,end:56800},15:{start:22800,end:55200},
+    16:{start:21900,end:52900},17:{start:21400,end:51900},18:{start:21000,end:50900},
+    19:{start:20500,end:49600},20:{start:20000,end:48400}
+  }
+};
+
+let currentYear = 2026;
+let sortCol = 0;
+let sortAsc = true;
+let selected = []; // left-side grade of selected rows
+
+function format(n) {
+  return n.toLocaleString('en-IN');
+}
+
+function buildRows() {
+  const data = scales[currentYear];
+  const otherYear = currentYear === 2026 ? 2015 : 2026;
+  const other = scales[otherYear];
+  const rows = [];
+
+  for (let g = 20; g >= 2; g--) {
+    const lower = data[g];
+    const higher = data[g - 1];
+    const startDiff = higher.start - lower.start;
+    const endDiff   = higher.end   - lower.end;
+    const startPct  = (startDiff / lower.start) * 100;
+    const endPct    = (endDiff   / lower.end)   * 100;
+
+    rows.push({
+      g,
+      lowerStart: lower.start,
+      higherStart: higher.start,
+      startDiff, startPct,
+      lowerEnd: lower.end,
+      higherEnd: higher.end,
+      endDiff, endPct,
+      other: {
+        year: otherYear,
+        lowerStart: other[g].start,
+        lowerEnd: other[g].end,
+        higherStart: other[g-1].start,
+        higherEnd: other[g-1].end,
+        startDiff: other[g-1].start - other[g].start,
+        endDiff: other[g-1].end - other[g].end,
+        startPct: ((other[g-1].start - other[g].start) / other[g].start) * 100,
+        endPct: ((other[g-1].end - other[g].end) / other[g].end) * 100
+      }
+    });
+  }
+  return rows;
+}
+
+function sortRows(rows) {
+  rows.sort((a, b) => {
+    let va, vb;
+    switch (sortCol) {
+      case 0: va = a.g; vb = b.g; break;
+      case 1: va = a.lowerStart; vb = b.lowerStart; break;
+      case 2: va = a.higherStart; vb = b.higherStart; break;
+      case 3: va = a.startDiff; vb = b.startDiff; break;
+      case 4: va = a.lowerEnd; vb = b.lowerEnd; break;
+      case 5: va = a.higherEnd; vb = b.higherEnd; break;
+      case 6: va = a.endDiff; vb = b.endDiff; break;
+      default: va = a.g; vb = b.g;
+    }
+    return sortAsc ? va - vb : vb - va;
+  });
+  return rows;
+}
+
+function renderTable() {
+  let rows = buildRows();
+  rows = sortRows(rows);
+
+  const tbody = document.getElementById('diffBody');
+  tbody.innerHTML = '';
+
+  rows.forEach(r => {
+    const startClass = r.startDiff >= 0 ? 'pos' : 'neg';
+    const endClass   = r.endDiff   >= 0 ? 'pos' : 'neg';
+    const isSelected = selected.includes(r.g);
+
+    const tr = document.createElement('tr');
+    if (isSelected) tr.classList.add('selected');
+    tr.dataset.g = r.g;
+
+    tr.innerHTML = `
+      <td class="grade">${r.g} → ${r.g-1}</td>
+      <td class="salary">${format(r.lowerStart)}</td>
+      <td class="salary">${format(r.higherStart)}</td>
+      <td class="diff-cell ${startClass}">
+        <span class="diff-amount">${r.startDiff>=0?'+':''}${format(r.startDiff)}</span>
+        <span class="diff-pct">(${r.startPct.toFixed(1)}%)</span>
+      </td>
+      <td class="salary">${format(r.lowerEnd)}</td>
+      <td class="salary">${format(r.higherEnd)}</td>
+      <td class="diff-cell ${endClass}">
+        <span class="diff-amount">${r.endDiff>=0?'+':''}${format(r.endDiff)}</span>
+        <span class="diff-pct">(${r.endPct.toFixed(1)}%)</span>
+      </td>
+    `;
+
+    tr.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleSelect(r.g);
+    });
+
+    tr.addEventListener('mouseenter', (e) => showTooltip(e, r));
+    tr.addEventListener('mousemove', moveTooltip);
+    tr.addEventListener('mouseleave', hideTooltip);
+
+    tbody.appendChild(tr);
+  });
+
+  document.querySelectorAll('th').forEach(th => {
+    const col = +th.dataset.col;
+    const icon = th.querySelector('.sort-icon');
+    if (col === sortCol) {
+      th.classList.add('sorted');
+      icon.textContent = sortAsc ? '▲' : '▼';
+    } else {
+      th.classList.remove('sorted');
+      icon.textContent = '▲';
+    }
+  });
+
+  drawConnector();
+}
+
+function toggleSelect(g) {
+  const idx = selected.indexOf(g);
+  if (idx >= 0) {
+    selected.splice(idx, 1);
+  } else {
+    selected.push(g);
+    if (selected.length > 2) selected.shift();
+  }
+  renderTable();
+}
+
+function showTooltip(e, r) {
+  const o = r.other;
+  const tip = document.getElementById('tooltip');
+  tip.innerHTML = `
+    <strong class="oy">${o.year} স্কেল</strong> – সম্পূর্ণ তথ্য<br><br>
+    <strong>গ্রেড ${r.g} → ${r.g-1}</strong><br>
+    প্রারম্ভিক: ${format(o.lowerStart)} → ${format(o.higherStart)}<br>
+    ব্যবধান: ${o.startDiff>=0?'+':''}${format(o.startDiff)} (${o.startPct.toFixed(1)}%)<br>
+    সর্বোচ্চ: ${format(o.lowerEnd)} → ${format(o.higherEnd)}<br>
+    ব্যবধান: ${o.endDiff>=0?'+':''}${format(o.endDiff)} (${o.endPct.toFixed(1)}%)
+  `;
+  tip.style.display = 'block';
+  moveTooltip(e);
+}
+
+function moveTooltip(e) {
+  const tip = document.getElementById('tooltip');
+  tip.style.left = (e.pageX + 14) + 'px';
+  tip.style.top  = (e.pageY + 14) + 'px';
+}
+
+function hideTooltip() {
+  document.getElementById('tooltip').style.display = 'none';
+}
+
+function drawConnector() {
+  const svg = document.getElementById('connectorSvg');
+  const label = document.getElementById('diffLabel');
+  const panel = document.getElementById('connectorPanel');
+  const tableWrap = document.getElementById('tableWrap');
+
+  svg.innerHTML = '';
+  label.style.display = 'none';
+
+  if (selected.length !== 2) return;
+
+  const rows = Array.from(document.querySelectorAll('#diffBody tr'));
+  const tr1 = rows.find(tr => +tr.dataset.g === selected[0]);
+  const tr2 = rows.find(tr => +tr.dataset.g === selected[1]);
+  if (!tr1 || !tr2) return;
+
+  const panelRect = panel.getBoundingClientRect();
+  const r1 = tr1.getBoundingClientRect();
+  const r2 = tr2.getBoundingClientRect();
+
+  const y1 = r1.top + r1.height/2 - panelRect.top;
+  const y2 = r2.top + r2.height/2 - panelRect.top;
+  const xStart = 8;   // near the table
+  const xMid  = 55;  // curve control
+
+  const tableHeight = tableWrap.scrollHeight;
+  svg.setAttribute('height', tableHeight);
+  panel.style.height = tableHeight + 'px';
+
+  // Smooth cubic curve
+  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  const d = `M ${xStart} ${y1} 
+             C ${xMid} ${y1}, ${xMid} ${y2}, ${xStart} ${y2}`;
+  path.setAttribute('d', d);
+  path.setAttribute('fill', 'none');
+  path.setAttribute('stroke', '#fde047');
+  path.setAttribute('stroke-width', '2.8');
+  path.setAttribute('stroke-linecap', 'round');
+  svg.appendChild(path);
+
+  // Arrow head helper
+  function drawArrow(x, y, pointingLeft = true) {
+    const size = 9;
+    const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+    if (pointingLeft) {
+      // points left toward the row
+      arrow.setAttribute('points', `${x},${y} ${x+size},${y-size*0.7} ${x+size},${y+size*0.7}`);
+    } else {
+      arrow.setAttribute('points', `${x},${y} ${x-size},${y-size*0.7} ${x-size},${y+size*0.7}`);
+    }
+    arrow.setAttribute('fill', '#fde047');
+    svg.appendChild(arrow);
+  }
+
+  // Arrows pointing to the selected rows (leftward)
+  drawArrow(xStart, y1, true);
+  drawArrow(xStart, y2, true);
+
+  // === Correct comparison logic ===
+  // Take all grades involved in the two selected pairs, then use the extreme ones
+  // e.g. selected 2→1 and 5→4  →  grades 1,2,4,5  →  compare 5 vs 1
+  const allGrades = [
+    selected[0], selected[0] - 1,
+    selected[1], selected[1] - 1
+  ];
+  const gHigh = Math.min(...allGrades); // smallest number = highest rank
+  const gLow  = Math.max(...allGrades); // largest number = lowest rank
+
+  const data = scales[currentYear];
+  const startHigh = data[gHigh].start; // higher rank has higher salary
+  const startLow  = data[gLow].start;
+  const endHigh   = data[gHigh].end;
+  const endLow    = data[gLow].end;
+
+  const startDiff = startHigh - startLow;
+  const endDiff   = endHigh - endLow;
+  const startPct  = ((startDiff / startLow) * 100).toFixed(1);
+  const endPct    = ((endDiff / endLow) * 100).toFixed(1);
+
+  label.innerHTML = `
+    <div class="title">গ্রেড ${gLow} vs ${gHigh}</div>
+    <div class="line">প্রারম্ভিক<br>
+      <span class="val">${format(startLow)} → ${format(startHigh)}</span><br>
+      <span class="val">Δ ${format(Math.abs(startDiff))} (${startPct}%)</span>
+    </div>
+    <div class="line" style="margin-top:6px">সর্বোচ্চ<br>
+      <span class="val">${format(endLow)} → ${format(endHigh)}</span><br>
+      <span class="val">Δ ${format(Math.abs(endDiff))} (${endPct}%)</span>
+    </div>
+  `;
+  label.style.display = 'block';
+  label.style.left = (xMid + 8) + 'px';
+  label.style.top  = ((y1 + y2) / 2) + 'px';
+}
+
+// Header sort
+document.querySelectorAll('th').forEach(th => {
+  th.addEventListener('click', () => {
+    const col = +th.dataset.col;
+    if (sortCol === col) sortAsc = !sortAsc;
+    else { sortCol = col; sortAsc = true; }
+    renderTable();
+  });
+});
+
+// Year toggle
+document.getElementById('yearToggle').addEventListener('change', function() {
+  currentYear = this.checked ? 2026 : 2015;
+  document.getElementById('label2026').classList.toggle('active', this.checked);
+  document.getElementById('label2015').classList.toggle('active', !this.checked);
+  selected = [];
+  renderTable();
+});
+
+document.getElementById('tableWrap').addEventListener('scroll', drawConnector);
+window.addEventListener('resize', drawConnector);
+
+renderTable();
+</script>
+</body>
+</html>

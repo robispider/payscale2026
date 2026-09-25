@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>গ্রেডভিত্তিক প্রারম্ভিক বেতন পার্থক্য – বার গ্রাফ</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --accent: #38bdf8;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --green: #4ade80;
+    --red: #f87171;
+    --border: #334155;
+    --yellow: #fde047;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    padding: 20px 16px;
+  }
+  h1 {
+    text-align: center;
+    font-size: 1.4rem;
+    margin-bottom: 6px;
+    color: var(--accent);
+  }
+  .subtitle {
+    text-align: center;
+    color: var(--muted);
+    margin-bottom: 20px;
+    font-size: 0.92rem;
+  }
+
+  /* Year Toggle */
+  .switch-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .switch-label {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--muted);
+  }
+  .switch-label.active { color: var(--accent); }
+  .switch {
+    position: relative;
+    width: 56px;
+    height: 28px;
+  }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background: #475569;
+    border-radius: 28px;
+    transition: 0.3s;
+  }
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 22px; width: 22px;
+    left: 3px; bottom: 3px;
+    background: white;
+    border-radius: 50%;
+    transition: 0.3s;
+  }
+  input:checked + .slider { background: var(--accent); }
+  input:checked + .slider:before { transform: translateX(28px); }
+
+  /* Grade Pills */
+  .pills-wrap {
+    max-width: 960px;
+    margin: 0 auto 24px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+  }
+  .pill {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 14px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+  }
+  .pill:hover {
+    border-color: var(--accent);
+    background: #243044;
+  }
+  .pill.active {
+    background: var(--accent);
+    color: #0f172a;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(56,189,248,0.3);
+  }
+
+  /* Chart Container */
+  .chart-container {
+    max-width: 980px;
+    margin: 0 auto;
+    background: var(--card);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    padding: 20px 16px 28px;
+    overflow-x: auto;
+  }
+  .chart-title {
+    text-align: center;
+    font-size: 1.05rem;
+    margin-bottom: 18px;
+    color: var(--yellow);
+    font-weight: 700;
+  }
+  .chart-title span {
+    color: var(--accent);
+  }
+
+  .bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 320px;
+    padding: 0 8px;
+    min-width: 700px;
+  }
+  .bar-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    justify-content: flex-end;
+    min-width: 28px;
+  }
+  .bar-wrapper {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    position: relative;
+  }
+  .bar {
+    width: 70%;
+    max-width: 36px;
+    border-radius: 6px 6px 0 0;
+    transition: height 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    position: relative;
+    cursor: default;
+  }
+  .bar.positive { background: linear-gradient(180deg, #4ade80, #16a34a); }
+  .bar.negative { background: linear-gradient(180deg, #f87171, #dc2626); }
+  .bar.zero     { background: #64748b; }
+
+  .bar-value {
+    position: absolute;
+    top: -22px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.72rem;
+    font-weight: 700;
+    white-space: nowrap;
+    color: var(--text);
+  }
+  .bar.positive .bar-value { color: #86efac; }
+  .bar.negative .bar-value { color: #fca5a5; }
+
+  .bar-label {
+    margin-top: 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-align: center;
+  }
+  .bar-group.base .bar-label {
+    color: var(--accent);
+    font-weight: 800;
+  }
+
+  .zero-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #475569;
+    z-index: 1;
+  }
+
+  .legend {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-top: 18px;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+  }
+  .legend-dot.pos { background: #4ade80; }
+  .legend-dot.neg { background: #f87171; }
+
+  .note {
+    text-align: center;
+    margin-top: 16px;
+    font-size: 0.82rem;
+    color: var(--muted);
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  @media (max-width: 600px) {
+    h1 { font-size: 1.2rem; }
+    .bars { height: 260px; gap: 4px; }
+    .bar-value { font-size: 0.65rem; top: -18px; }
+    .bar-label { font-size: 0.7rem; }
+    .pill { padding: 6px 11px; font-size: 0.82rem; }
+  }
+</style>
+</head>
+<body>
+
+<h1>প্রারম্ভিক বেতনের গ্রেডভিত্তিক পার্থক্য</h1>
+<p class="subtitle">একটি বেস গ্রেড সিলেক্ট করুন → অন্য সব গ্রেডের প্রারম্ভিক বেতন কত % বেশি/কম তা দেখুন</p>
+
+<div class="switch-wrap">
+  <span class="switch-label" id="label2015">২০১৫ স্কেল</span>
+  <label class="switch">
+    <input type="checkbox" id="yearToggle" checked>
+    <span class="slider"></span>
+  </label>
+  <span class="switch-label active" id="label2026">২০২৬ স্কেল</span>
+</div>
+
+<div class="pills-wrap" id="pills"></div>
+
+<div class="chart-container">
+  <div class="chart-title" id="chartTitle">বেস গ্রেড সিলেক্ট করুন</div>
+  <div class="bars" id="bars"></div>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot pos"></div> বেস গ্রেডের চেয়ে বেশি</div>
+    <div class="legend-item"><div class="legend-dot neg"></div> বেস গ্রেডের চেয়ে কম</div>
+  </div>
+</div>
+
+<p class="note">
+  প্রতিটি বার দেখায় সিলেক্টেড বেস গ্রেডের প্রারম্ভিক বেতনের তুলনায় অন্য গ্রেডের প্রারম্ভিক বেতন কত শতাংশ বেশি (+) বা কম (–)।
+</p>
+
+<script>
+const scales = {
+  2015: {
+    1: 78000, 2: 66000, 3: 56500, 4: 50000, 5: 43000,
+    6: 35500, 7: 29000, 8: 23000, 9: 22000, 10: 16000,
+    11: 12500, 12: 11300, 13: 11000, 14: 10200, 15: 9700,
+    16: 9300, 17: 9000, 18: 8800, 19: 8500, 20: 8250
+  },
+  2026: {
+    1: 156000, 2: 132000, 3: 113000, 4: 100000, 5: 86000,
+    6: 71000, 7: 58000, 8: 46000, 9: 44000, 10: 32000,
+    11: 25000, 12: 24300, 13: 24000, 14: 23500, 15: 22800,
+    16: 21900, 17: 21400, 18: 21000, 19: 20500, 20: 20000
+  }
+};
+
+let currentYear = 2026;
+let baseGrade = 9; // default
+
+function format(n) {
+  return n.toLocaleString('en-IN');
+}
+
+function renderPills() {
+  const wrap = document.getElementById('pills');
+  wrap.innerHTML = '';
+  for (let g = 1; g <= 20; g++) {
+    const pill = document.createElement('button');
+    pill.className = 'pill' + (g === baseGrade ? ' active' : '');
+    pill.textContent = `গ্রেড ${g}`;
+    pill.dataset.g = g;
+    pill.addEventListener('click', () => {
+      baseGrade = g;
+      document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      renderChart();
+    });
+    wrap.appendChild(pill);
+  }
+}
+
+function renderChart() {
+  const data = scales[currentYear];
+  const baseSalary = data[baseGrade];
+  const barsEl = document.getElementById('bars');
+  barsEl.innerHTML = '';
+
+  document.getElementById('chartTitle').innerHTML =
+    `বেস: <span>গ্রেড ${baseGrade}</span> (প্রারম্ভিক ৳${format(baseSalary)}) এর তুলনায় অন্য গ্রেডের পার্থক্য`;
+
+  // Calculate all % differences
+  const diffs = [];
+  for (let g = 1; g <= 20; g++) {
+    const sal = data[g];
+    const pct = ((sal - baseSalary) / baseSalary) * 100;
+    diffs.push({ g, sal, pct });
+  }
+
+  // Find max abs for scaling
+  const maxAbs = Math.max(...diffs.map(d => Math.abs(d.pct)), 1);
+
+  diffs.forEach(d => {
+    const group = document.createElement('div');
+    group.className = 'bar-group' + (d.g === baseGrade ? ' base' : '');
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'bar-wrapper';
+
+    const bar = document.createElement('div');
+    bar.className = 'bar';
+
+    const heightPct = (Math.abs(d.pct) / maxAbs) * 85; // max 85% of container
+    bar.style.height = (d.g === baseGrade ? 4 : Math.max(heightPct, 2)) + '%';
+
+    if (d.pct > 0.05) bar.classList.add('positive');
+    else if (d.pct < -0.05) bar.classList.add('negative');
+    else bar.classList.add('zero');
+
+    const value = document.createElement('div');
+    value.className = 'bar-value';
+    if (d.g === baseGrade) {
+      value.textContent = 'বেস';
+    } else {
+      value.textContent = (d.pct >= 0 ? '+' : '') + d.pct.toFixed(1) + '%';
+    }
+    bar.appendChild(value);
+
+    wrapper.appendChild(bar);
+
+    const label = document.createElement('div');
+    label.className = 'bar-label';
+    label.textContent = d.g;
+
+    group.appendChild(wrapper);
+    group.appendChild(label);
+    barsEl.appendChild(group);
+  });
+}
+
+// Year toggle
+document.getElementById('yearToggle').addEventListener('change', function () {
+  currentYear = this.checked ? 2026 : 2015;
+  document.getElementById('label2026').classList.toggle('active', this.checked);
+  document.getElementById('label2015').classList.toggle('active', !this.checked);
+  renderChart();
+});
+
+renderPills();
+renderChart();
+</script>
+</body>
+</html>
