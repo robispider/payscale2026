@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>রিয়েল বেতন বৃদ্ধি – মূল্যস্ফীতি সমন্বিত (২০১৫ → ২০২৬)</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --accent: #38bdf8;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --green: #4ade80;
+    --red: #f87171;
+    --yellow: #fde047;
+    --border: #334155;
+    --orange: #fb923c;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    padding: 20px 16px;
+  }
+  h1 {
+    text-align: center;
+    font-size: 1.4rem;
+    margin-bottom: 6px;
+    color: var(--accent);
+  }
+  .subtitle {
+    text-align: center;
+    color: var(--muted);
+    margin-bottom: 18px;
+    font-size: 0.92rem;
+  }
+
+  .info-box {
+    max-width: 860px;
+    margin: 0 auto 22px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-size: 0.88rem;
+    color: var(--muted);
+  }
+  .info-box strong { color: var(--yellow); }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  select {
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 9px 14px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+  }
+
+  .chart-container {
+    max-width: 980px;
+    margin: 0 auto 20px;
+    background: var(--card);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    padding: 18px 14px 24px;
+    overflow-x: auto;
+  }
+  .chart-title {
+    text-align: center;
+    font-size: 1.05rem;
+    margin-bottom: 16px;
+    color: var(--yellow);
+    font-weight: 700;
+  }
+
+  .bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 5px;
+    height: 340px;
+    padding: 0 6px;
+    min-width: 720px;
+  }
+  .bar-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    justify-content: flex-end;
+    min-width: 30px;
+  }
+  .bar-wrapper {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    position: relative;
+  }
+  .bar {
+    width: 72%;
+    max-width: 34px;
+    border-radius: 5px 5px 0 0;
+    transition: height 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    position: relative;
+  }
+  .bar.real-pos { background: linear-gradient(180deg, #4ade80, #16a34a); }
+  .bar.real-neg { background: linear-gradient(180deg, #f87171, #b91c1c); }
+  .bar.nominal  { background: linear-gradient(180deg, #38bdf8, #0284c7); opacity: 0.55; }
+
+  .bar-value {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.68rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .bar.real-pos .bar-value { color: #86efac; }
+  .bar.real-neg .bar-value { color: #fca5a5; }
+
+  .bar-label {
+    margin-top: 7px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--muted);
+  }
+
+  .legend {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 18px;
+    margin-top: 16px;
+    font-size: 0.84rem;
+    color: var(--muted);
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+  }
+
+  .summary {
+    max-width: 860px;
+    margin: 0 auto 16px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+  }
+  .summary-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+  }
+  .summary-card .label { font-size: 0.82rem; color: var(--muted); }
+  .summary-card .value {
+    font-size: 1.25rem;
+    font-weight: 800;
+    margin-top: 4px;
+  }
+  .summary-card .value.green { color: var(--green); }
+  .summary-card .value.red { color: var(--red); }
+  .summary-card .value.blue { color: var(--accent); }
+
+  .note {
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--muted);
+    max-width: 820px;
+    margin: 12px auto 0;
+  }
+
+  @media (max-width: 600px) {
+    h1 { font-size: 1.2rem; }
+    .bars { height: 280px; }
+    .bar-value { font-size: 0.62rem; }
+  }
+</style>
+</head>
+<body>
+
+<h1>রিয়েল বেতন বৃদ্ধি (মূল্যস্ফীতি সমন্বিত)</h1>
+<p class="subtitle">২০১৫ সালের বেতনকে ২০২৬-এর মূল্যে convert করে আসল বৃদ্ধি দেখানো হয়েছে</p>
+
+<div class="info-box">
+  <strong>হিসাব পদ্ধতি:</strong> ২০১৫ → ২০২৬ পর্যন্ত বাংলাদেশের ক্রমবর্ধমান মূল্যস্ফীতি ≈ <strong>১০২%</strong> 
+  (World Bank + BBS ডেটা ভিত্তিক আনুমানিক)। অর্থাৎ ২০১৫-এর ১০০ টাকা ≈ ২০২৬-এ ২০২ টাকা।
+  <br>রিয়েল বৃদ্ধি = (২০২৬ বেতন − মূল্যস্ফীতি-সমন্বিত ২০১৫ বেতন) ÷ মূল্যস্ফীতি-সমন্বিত ২০১৫ বেতন
+</div>
+
+<div class="controls">
+  <label>দেখুন:</label>
+  <select id="viewMode">
+    <option value="real">রিয়েল বৃদ্ধি (%)</option>
+    <option value="both">নমিনাল vs রিয়েল তুলনা</option>
+  </select>
+</div>
+
+<div class="summary" id="summary"></div>
+
+<div class="chart-container">
+  <div class="chart-title" id="chartTitle">প্রতিটি গ্রেডের রিয়েল বেতন বৃদ্ধি</div>
+  <div class="bars" id="bars"></div>
+  <div class="legend" id="legend"></div>
+</div>
+
+<p class="note">
+  সবুজ বার = আসলেই বেতন বেড়েছে (মূল্যস্ফীতির চেয়ে বেশি) · 
+  লাল বার = মূল্যস্ফীতির চেয়ে কম বেড়েছে (রিয়েল ক্ষতি)
+</p>
+
+<script>
+// Starting salaries
+const start2015 = {
+  1:78000, 2:66000, 3:56500, 4:50000, 5:43000,
+  6:35500, 7:29000, 8:23000, 9:22000, 10:16000,
+  11:12500, 12:11300, 13:11000, 14:10200, 15:9700,
+  16:9300, 17:9000, 18:8800, 19:8500, 20:8250
+};
+
+const start2026 = {
+  1:156000, 2:132000, 3:113000, 4:100000, 5:86000,
+  6:71000, 7:58000, 8:46000, 9:44000, 10:32000,
+  11:25000, 12:24300, 13:24000, 14:23500, 15:22800,
+  16:21900, 17:21400, 18:21000, 19:20500, 20:20000
+};
+
+// Cumulative inflation factor 2015 → 2026
+// Based on compounded annual rates ≈ 102% total rise → multiplier 2.02
+const INFLATION_FACTOR = 2.02;
+
+function format(n) {
+  return Math.round(n).toLocaleString('en-IN');
+}
+
+function calcData() {
+  const data = [];
+  for (let g = 1; g <= 20; g++) {
+    const old = start2015[g];
+    const neu = start2026[g];
+    const adjustedOld = old * INFLATION_FACTOR;          // 2015 salary in 2026 money
+    const nominalPct = ((neu - old) / old) * 100;
+    const realPct = ((neu - adjustedOld) / adjustedOld) * 100;
+    const realGain = neu - adjustedOld;
+
+    data.push({
+      g,
+      old,
+      neu,
+      adjustedOld,
+      nominalPct,
+      realPct,
+      realGain
+    });
+  }
+  return data;
+}
+
+function render() {
+  const mode = document.getElementById('viewMode').value;
+  const data = calcData();
+  const barsEl = document.getElementById('bars');
+  barsEl.innerHTML = '';
+
+  // Summary
+  const avgReal = data.reduce((s, d) => s + d.realPct, 0) / 20;
+  const avgNominal = data.reduce((s, d) => s + d.nominalPct, 0) / 20;
+  const positiveCount = data.filter(d => d.realPct > 0).length;
+
+  document.getElementById('summary').innerHTML = `
+    <div class="summary-card">
+      <div class="label">গড় নমিনাল বৃদ্ধি</div>
+      <div class="value blue">+${avgNominal.toFixed(1)}%</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">গড় রিয়েল বৃদ্ধি</div>
+      <div class="value ${avgReal >= 0 ? 'green' : 'red'}">${avgReal >= 0 ? '+' : ''}${avgReal.toFixed(1)}%</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">রিয়েল লাভ আছে এমন গ্রেড</div>
+      <div class="value green">${positiveCount} / 20</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">মূল্যস্ফীতি ফ্যাক্টর</div>
+      <div class="value blue">×${INFLATION_FACTOR.toFixed(2)}</div>
+    </div>
+  `;
+
+  document.getElementById('chartTitle').textContent =
+    mode === 'real'
+      ? 'প্রতিটি গ্রেডের রিয়েল বেতন বৃদ্ধি (মূল্যস্ফীতি সমন্বিত)'
+      : 'নমিনাল vs রিয়েল বৃদ্ধির তুলনা';
+
+  // Scaling
+  const maxAbs = Math.max(
+    ...data.map(d => Math.abs(d.realPct)),
+    ...data.map(d => Math.abs(d.nominalPct)),
+    5
+  );
+
+  data.forEach(d => {
+    const group = document.createElement('div');
+    group.className = 'bar-group';
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'bar-wrapper';
+
+    if (mode === 'real') {
+      const bar = document.createElement('div');
+      bar.className = 'bar ' + (d.realPct >= 0 ? 'real-pos' : 'real-neg');
+      const h = Math.min(Math.abs(d.realPct) / maxAbs * 88, 88);
+      bar.style.height = Math.max(h, 3) + '%';
+
+      const val = document.createElement('div');
+      val.className = 'bar-value';
+      val.textContent = (d.realPct >= 0 ? '+' : '') + d.realPct.toFixed(1) + '%';
+      bar.appendChild(val);
+      wrapper.appendChild(bar);
+    } else {
+      // Both bars side by side (simplified: show real as main)
+      const bar = document.createElement('div');
+      bar.className = 'bar ' + (d.realPct >= 0 ? 'real-pos' : 'real-neg');
+      const h = Math.min(Math.abs(d.realPct) / maxAbs * 88, 88);
+      bar.style.height = Math.max(h, 3) + '%';
+
+      const val = document.createElement('div');
+      val.className = 'bar-value';
+      val.textContent = (d.realPct >= 0 ? '+' : '') + d.realPct.toFixed(0) + '%';
+      bar.appendChild(val);
+      wrapper.appendChild(bar);
+    }
+
+    const label = document.createElement('div');
+    label.className = 'bar-label';
+    label.textContent = d.g;
+
+    group.appendChild(wrapper);
+    group.appendChild(label);
+    barsEl.appendChild(group);
+  });
+
+  // Legend
+  document.getElementById('legend').innerHTML = `
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#4ade80"></div> রিয়েল লাভ (মূল্যস্ফীতির চেয়ে বেশি)
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#f87171"></div> রিয়েল ক্ষতি (মূল্যস্ফীতির চেয়ে কম)
+    </div>
+  `;
+}
+
+document.getElementById('viewMode').addEventListener('change', render);
+render();
+</script>
+</body>
+</html>

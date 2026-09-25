@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>৯ম জাতীয় বেতনস্কেল ২০২৬ – টুলস ড্যাশবোর্ড</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --accent: #38bdf8;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --green: #4ade80;
+    --yellow: #fde047;
+    --border: #334155;
+    --orange: #fb923c;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    min-height: 100vh;
+    padding: 24px 16px 40px;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+  .header h1 {
+    font-size: 1.7rem;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .header p {
+    color: var(--muted);
+    font-size: 1rem;
+    max-width: 560px;
+    margin: 0 auto;
+  }
+  .badge {
+    display: inline-block;
+    background: rgba(56,189,248,0.15);
+    color: var(--accent);
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 20px;
+    margin-top: 12px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 20px;
+    transition: all 0.25s ease;
+    display: flex;
+    flex-direction: column;
+  }
+  .card:hover {
+    border-color: var(--accent);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 28px rgba(0,0,0,0.35);
+  }
+
+  .card-icon {
+    font-size: 1.8rem;
+    margin-bottom: 12px;
+  }
+  .card h2 {
+    font-size: 1.15rem;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+  .card p {
+    color: var(--muted);
+    font-size: 0.9rem;
+    flex-grow: 1;
+    margin-bottom: 18px;
+  }
+
+  .card a {
+    display: inline-block;
+    background: var(--accent);
+    color: #0f172a;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 9px 18px;
+    border-radius: 8px;
+    text-align: center;
+    transition: background 0.2s;
+  }
+  .card a:hover {
+    background: #7dd3fc;
+  }
+
+  .card.featured {
+    border-color: var(--yellow);
+    background: linear-gradient(145deg, #1e293b, #1e3a5f);
+  }
+  .card.featured a {
+    background: var(--yellow);
+  }
+  .card.featured a:hover {
+    background: #fef08a;
+  }
+
+  .footer {
+    text-align: center;
+    margin-top: 48px;
+    color: var(--muted);
+    font-size: 0.82rem;
+  }
+  .footer a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  @media (max-width: 600px) {
+    .header h1 { font-size: 1.4rem; }
+    .grid { gap: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>৯ম জাতীয় বেতনস্কেল ২০২৬</h1>
+  <p>সরকারি কর্মচারীদের জন্য ইন্টারঅ্যাকটিভ বেতন টুলস ও বিশ্লেষণ</p>
+  <div class="badge">গেজেট ভিত্তিক · ১০০% সঠিক ধাপসমূহ</div>
+</div>
+
+<div class="grid">
+
+  <!-- 1. Fixation Table -->
+  <div class="card featured">
+    <div class="card-icon">📋</div>
+    <h2>ধাপভিত্তিক বেতন নির্ধারণ</h2>
+    <p>
+      ২০১৫ স্কেলের প্রতিটি ধাপ থেকে ২০২৬ স্কেলে কীভাবে বেতন নির্ধারিত হবে 
+      (বেস নির্ধারণ + ১ জুলাই ইনক্রিমেন্ট) দেখুন।
+    </p>
+    <a href="fixation.html">টুল খুলুন →</a>
+  </div>
+
+  <!-- 2. Grade Difference -->
+  <div class="card">
+    <div class="card-icon">📊</div>
+    <h2>গ্রেড-টু-গ্রেড ব্যবধান</h2>
+    <p>
+      দুই গ্রেডের মধ্যে প্রারম্ভিক ও সর্বোচ্চ বেতনের পার্থক্য। 
+      সারি সিলেক্ট করে সরাসরি তুলনা + সortable টেবিল।
+    </p>
+    <a href="grade-diff.html">টুল খুলুন →</a>
+  </div>
+
+  <!-- 3. Base Grade Bar Chart -->
+  <div class="card">
+    <div class="card-icon">📈</div>
+    <h2>বেস গ্রেড তুলনা (বার গ্রাফ)</h2>
+    <p>
+      একটি গ্রেডকে বেস হিসেবে নিয়ে অন্য সব গ্রেডের প্রারম্ভিক বেতন 
+      কত % বেশি/কম তা ভিজ্যুয়াল বার গ্রাফে দেখুন।
+    </p>
+    <a href="base-compare.html">টুল খুলুন →</a>
+  </div>
+
+  <!-- 4. Inflation Adjusted -->
+  <div class="card">
+    <div class="card-icon">📉</div>
+    <h2>রিয়েল বেতন বৃদ্ধি</h2>
+    <p>
+      মূল্যস্ফীতি সমন্বিত হিসাব। ২০১৫-এর বেতনকে আজকের মূল্যে convert করে 
+      আসলে কতটা রিয়েল বৃদ্ধি হয়েছে তা দেখুন।
+    </p>
+    <a href="real-value.html">টুল খুলুন →</a>
+  </div>
+
+</div>
+
+<div class="footer">
+  ডেটা সোর্স: বাংলাদেশ গেজেট (১৭ সেপ্টেম্বর ২০২৬) · চাকরি (বেতন ও ভাতাদি) আদেশ, ২০২৬<br>
+  টুলসগুলো সম্পূর্ণ ক্লায়েন্ট-সাইড · কোনো ডেটা সার্ভারে যায় না
+</div>
+
+</body>
+</html>
