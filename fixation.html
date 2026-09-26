@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>৯ম জাতীয় বেতনস্কেল ২০২৬ – ধাপভিত্তিক নির্ধারণ (গেজেট অনুসারে)</title>
+<title>৯ম জাতীয় বেতনস্কেল ২০২৬ – ধাপভিত্তিক নির্ধারণ</title>
 <style>
   :root {
     --bg: #0f172a;
@@ -59,7 +59,7 @@
     border-radius: 10px;
     padding: 14px;
     margin-bottom: 14px;
-    max-width: 980px;
+    max-width: 900px;
     margin-left: auto;
     margin-right: auto;
     font-size: 0.9rem;
@@ -70,13 +70,13 @@
     overflow-x: auto;
     border-radius: 10px;
     border: 1px solid var(--border);
-    max-width: 1100px;
+    max-width: 900px;
     margin: 0 auto;
   }
   table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 720px;
+    min-width: 560px;
   }
   th, td {
     padding: 9px 10px;
@@ -96,60 +96,44 @@
   .old { color: var(--muted); }
   .base-step { color: var(--accent); font-weight: 600; }
   .base-pay { color: var(--orange); font-weight: 700; font-size: 1.05rem; }
-  
-  /* Prominent increase column */
-  .base-diff {
-    font-weight: 700;
-    white-space: nowrap;
-  }
+  .base-diff { font-weight: 700; white-space: nowrap; }
   .base-diff .amount {
     color: var(--yellow);
     font-size: 1.05rem;
     display: block;
   }
   .base-diff .pct {
-    color: #fde047;          /* brighter yellow */
-    font-size: 1.15rem;      /* bigger than amount */
+    color: #fde047;
+    font-size: 1.15rem;
     font-weight: 800;
     display: block;
     margin-top: 2px;
     letter-spacing: 0.3px;
   }
-
-  .final-step { color: var(--green); font-weight: 600; }
-  .final-pay { color: var(--green); font-weight: 700; font-size: 1.05rem; }
   .note {
     text-align: center;
     margin-top: 16px;
     font-size: 0.82rem;
     color: var(--muted);
-    max-width: 920px;
+    max-width: 900px;
     margin-left: auto;
     margin-right: auto;
   }
 
-  /* Print friendly */
   @media print {
     body { background: white; color: black; padding: 0; }
     h1, .subtitle, .controls, .info, .note { color: black; }
     .table-wrap { border: 1px solid #333; }
     th { background: #eee !important; color: black !important; }
     tr:nth-child(even) { background: #f5f5f5 !important; }
-    .old, .base-step, .base-pay, .base-diff, .final-step, .final-pay {
-      color: black !important;
-    }
-    .base-diff .amount { font-weight: bold; }
-    .base-diff .pct { 
-      font-size: 1.2rem !important; 
-      font-weight: 900 !important;
-      color: #000 !important;
-    }
+    .old, .base-step, .base-pay, .base-diff { color: black !important; }
+    .base-diff .pct { font-size: 1.2rem !important; font-weight: 900 !important; }
   }
 
   @media (max-width: 600px) {
     h1 { font-size: 1.2rem; }
     th, td { padding: 7px 5px; font-size: 0.8rem; }
-    .base-pay, .final-pay { font-size: 0.95rem; }
+    .base-pay { font-size: 0.95rem; }
     .base-diff .amount { font-size: 0.95rem; }
     .base-diff .pct { font-size: 1.05rem; }
   }
@@ -157,33 +141,28 @@
 </head>
 <body>
 
+<script src="data.js"></script>
+<script src="nav.js"></script>
+
 <h1>৯ম জাতীয় বেতনস্কেল ২০২৬ – ধাপভিত্তিক নির্ধারণ</h1>
-<p class="subtitle">সরকারি গেজেট (১৭ সেপ্টেম্বর ২০২৬) অনুসারে ১০০% সঠিক ধাপসমূহ</p>
+<p class="subtitle">সরকারি গেজেট (১৭ সেপ্টেম্বর ২০২৬) অনুসারে · শুধু বেস নির্ধারণ</p>
 
 <div class="controls">
   <label for="gradeSelect">গ্রেড নির্বাচন করুন:</label>
   <select id="gradeSelect"></select>
 </div>
 
-<div class="info" id="gradeInfo">
-  একটি গ্রেড নির্বাচন করুন।
-</div>
+<div class="info" id="gradeInfo">একটি গ্রেড নির্বাচন করুন।</div>
 
 <div class="table-wrap">
   <table id="resultTable">
     <thead>
       <tr>
-        <th rowspan="2">২০১৫<br>ধাপ #</th>
-        <th rowspan="2">২০১৫ মূল বেতন<br>(৳)</th>
-        <th colspan="3">বেস নির্ধারণ (ইনক্রিমেন্ট ছাড়া)</th>
-        <th colspan="2">+ ১ বছরের ইনক্রিমেন্ট<br>(১ জুলাই ২০২৬)</th>
-      </tr>
-      <tr>
-        <th>ধাপ</th>
-        <th>বেতন ৳</th>
+        <th>২০১৫<br>ধাপ #</th>
+        <th>২০১৫ মূল বেতন<br>(৳)</th>
+        <th>নতুন ধাপ</th>
+        <th>নতুন বেতন ৳</th>
         <th>বৃদ্ধি</th>
-        <th>ধাপ</th>
-        <th>বেতন ৳</th>
       </tr>
     </thead>
     <tbody id="tableBody"></tbody>
@@ -191,16 +170,15 @@
 </div>
 
 <p class="note">
-  <strong>গেজেট অনুসারে নির্ধারণ নিয়ম:</strong><br>
-  <b>বেস নির্ধারণ (অনুচ্ছেদ ৫):</b><br>
+  <strong>গেজেট অনুসারে বেস নির্ধারণ (অনুচ্ছেদ ৫):</strong><br>
   (ক) প্রারম্ভিক ধাপে থাকলে → নতুন স্কেলের প্রারম্ভিক ধাপ<br>
-  (খ) অন্যথায়: Δ = বর্তমান বেতন − ২০১৫ প্রারম্ভিক → নতুন প্রারম্ভিক + Δ → হুবহু মিললে সেই ধাপ, না মিললে পরবর্তী উচ্চতর ধাপ<br><br>
-  <b>+ ১ বছরের ইনক্রিমেন্ট (অনুচ্ছেদ ৯(২)):</b> ১ জুলাই ২০২৬ তারিখে ১টি বার্ষিক ইনক্রিমেন্ট যোগ করা হয়।
+  (খ) অন্যথায়: Δ = বর্তমান বেতন − ২০১৫ প্রারম্ভিক → নতুন প্রারম্ভিক + Δ →
+  হুবহু মিললে সেই ধাপ, না মিললে পরবর্তী উচ্চতর ধাপ
 </p>
 
 <script>
-// ========== EXACT STEPS FROM OFFICIAL GAZETTE ==========
-const scales = {
+// Prefer shared data if available, otherwise use embedded gazette steps
+const scales = (window.PayScaleData && window.PayScaleData.full2026) ? window.PayScaleData.full2026 : {
   1:  { old: [78000], new: [156000] },
   2:  { old: [66000,68480,71050,73720,76490],
         new: [132000,135700,139400,143200,147200,151200,153000] },
@@ -244,9 +222,7 @@ const scales = {
 
 function findNextOrExact(amount, newSteps) {
   for (let i = 0; i < newSteps.length; i++) {
-    if (newSteps[i] >= amount) {
-      return { step: i + 1, pay: newSteps[i] };
-    }
+    if (newSteps[i] >= amount) return { step: i + 1, pay: newSteps[i] };
   }
   return { step: newSteps.length, pay: newSteps[newSteps.length - 1] };
 }
@@ -258,47 +234,28 @@ function fixPay(oldBasic, g) {
   const oldStart = oldSteps[0];
   const newStart = newSteps[0];
 
-  let baseStep, basePay;
-
   if (oldBasic === oldStart) {
-    baseStep = 1;
-    basePay = newSteps[0];
-  } else {
-    const delta = oldBasic - oldStart;
-    const provisional = newStart + delta;
-    const matched = findNextOrExact(provisional, newSteps);
-    baseStep = matched.step;
-    basePay = matched.pay;
+    return { baseStep: 1, basePay: newSteps[0] };
   }
-
-  let finalStep = baseStep;
-  let finalPay = basePay;
-  if (baseStep < newSteps.length) {
-    finalStep = baseStep + 1;
-    finalPay = newSteps[finalStep - 1];
-  }
-
-  return { baseStep, basePay, finalStep, finalPay };
+  const delta = oldBasic - oldStart;
+  const provisional = newStart + delta;
+  const matched = findNextOrExact(provisional, newSteps);
+  return { baseStep: matched.step, basePay: matched.pay };
 }
 
 const sel = document.getElementById('gradeSelect');
 for (let g = 1; g <= 20; g++) {
   const opt = document.createElement('option');
   opt.value = g;
-  opt.textContent = `গ্রেড ${g}`;
+  opt.textContent = 'গ্রেড ' + g;
   sel.appendChild(opt);
 }
 
-// URL Parameter Support
 function getUrlGrade() {
-  const params = new URLSearchParams(window.location.search);
-  const g = parseInt(params.get('grade'));
-  if (g >= 1 && g <= 20) return g;
-  return null;
+  const g = parseInt(new URLSearchParams(window.location.search).get('grade'));
+  return (g >= 1 && g <= 20) ? g : null;
 }
-
-const urlGrade = getUrlGrade();
-sel.value = urlGrade || 9;
+sel.value = getUrlGrade() || 9;
 
 function renderTable() {
   const g = parseInt(sel.value);
@@ -306,34 +263,33 @@ function renderTable() {
   const oldSteps = data.old;
   const newSteps = data.new;
 
-  document.getElementById('gradeInfo').innerHTML = `
-    <strong>গ্রেড ${g}</strong><br>
-    ২০১৫ স্কেল: ৳${oldSteps[0].toLocaleString('en-IN')} – ৳${oldSteps[oldSteps.length-1].toLocaleString('en-IN')} (${oldSteps.length} ধাপ)<br>
-    ২০২৬ স্কেল: ৳${newSteps[0].toLocaleString('en-IN')} – ৳${newSteps[newSteps.length-1].toLocaleString('en-IN')} (${newSteps.length} ধাপ)
-  `;
+  document.getElementById('gradeInfo').innerHTML =
+    '<strong>গ্রেড ' + g + '</strong><br>' +
+    '২০১৫ স্কেল: ৳' + oldSteps[0].toLocaleString('en-IN') +
+    ' – ৳' + oldSteps[oldSteps.length - 1].toLocaleString('en-IN') +
+    ' (' + oldSteps.length + ' ধাপ)<br>' +
+    '২০২৬ স্কেল: ৳' + newSteps[0].toLocaleString('en-IN') +
+    ' – ৳' + newSteps[newSteps.length - 1].toLocaleString('en-IN') +
+    ' (' + newSteps.length + ' ধাপ)';
 
   const tbody = document.getElementById('tableBody');
   tbody.innerHTML = '';
 
   oldSteps.forEach((oldPay, idx) => {
     const result = fixPay(oldPay, g);
-    
     const baseIncrease = result.basePay - oldPay;
     const basePct = ((baseIncrease / oldPay) * 100).toFixed(1);
 
     const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${idx + 1}</td>
-      <td class="old">${oldPay.toLocaleString('en-IN')}</td>
-      <td class="base-step">${result.baseStep}</td>
-      <td class="base-pay">${result.basePay.toLocaleString('en-IN')}</td>
-      <td class="base-diff">
-        <span class="amount">+${baseIncrease.toLocaleString('en-IN')}</span>
-        <span class="pct">(+${basePct}%)</span>
-      </td>
-      <td class="final-step">${result.finalStep}</td>
-      <td class="final-pay">${result.finalPay.toLocaleString('en-IN')}</td>
-    `;
+    tr.innerHTML =
+      '<td>' + (idx + 1) + '</td>' +
+      '<td class="old">' + oldPay.toLocaleString('en-IN') + '</td>' +
+      '<td class="base-step">' + result.baseStep + '</td>' +
+      '<td class="base-pay">' + result.basePay.toLocaleString('en-IN') + '</td>' +
+      '<td class="base-diff">' +
+        '<span class="amount">+' + baseIncrease.toLocaleString('en-IN') + '</span>' +
+        '<span class="pct">(+' + basePct + '%)</span>' +
+      '</td>';
     tbody.appendChild(tr);
   });
 }
