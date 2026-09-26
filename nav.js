@@ -2,13 +2,16 @@
 (function () {
   const links = [
     { href: 'index.html',            label: 'ড্যাশবোর্ড' },
+       { href: 'payscale2026salarycalculator.html',         label: 'বেতন  নির্ধারণ' },
     { href: 'fixation.html',         label: 'ধাপ নির্ধারণ' },
     { href: 'grade-diff.html',       label: 'গ্রেড ব্যবধান' },
     { href: 'base-compare.html',     label: 'প্রারম্ভিক বেতনের গ্রেডভিত্তিক পার্থক্য' },
     { href: 'real-value.html',       label: 'মূল্যস্ফিতির তুলনায় বৃদ্ধি' },
     { href: 'valueerosion.html',        label: 'প্রমোশন মূল্য' },
     { href: 'grade-diff-history.html',     label: 'সব পেস্কেলের বৃদ্ধি ব্যবধান' },
-    { href: 'history-line-graph.html', label: 'সব পেস্কেলের বৃদ্ধি গ্রাফ' }
+    { href: 'history-line-graph.html', label: 'সব পেস্কেলের বৃদ্ধি গ্রাফ' },
+    { href: '9th-payscale-2026.pdf', label: 'পেস্কেল 25026 গেজেট' }
+
   ];
 
   const current = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
