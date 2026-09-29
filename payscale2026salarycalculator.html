@@ -285,16 +285,29 @@ if (!scales) {
     const base = fixBase(oldBasic, g);
     const withInc = addJuly26Increment(base.step, g);
     const effectiveFull = withInc.pay;
+
+    // বৃদ্ধি আলাদা: ফিক্সেশন vs ইনক্রিমেন্ট
+    const fixIncrease = base.pay - oldBasic;
+    const fixPct = ((fixIncrease / oldBasic) * 100).toFixed(1);
+    const incAmount = withInc.pay - base.pay;
     const totalIncrease = effectiveFull - oldBasic;
     const pctUp = ((totalIncrease / oldBasic) * 100).toFixed(1);
+
     const jul27 = addJuly26Increment(withInc.step, g);
     const phases = phaseList(g);
 
     const hraPct = hraPercent(g, area);
-    const hra = govHouse ? 0 : Math.round(effectiveFull * hraPct / 100);
     const medical = age === 'under50' ? 3000 : 4000;
-    const tiffin = (wantTiffin && g >= 11) ? 500 : 0;
-    const gross = effectiveFull + hra + medical + tiffin;
+    const tiffinAmt = (wantTiffin && g >= 11) ? 500 : 0;
+
+    // ভাতা = নতুন হার (পূর্ণ মূল বেতনের উপর) — প্রতিটি ধাপে একই %
+    function allowancesFor(basic) {
+      const hra = govHouse ? 0 : Math.round(basic * hraPct / 100);
+      return { hra, medical, tiffin: tiffinAmt, total: hra + medical + tiffinAmt };
+    }
+
+    const fullAllow = allowancesFor(effectiveFull);
+    const gross = effectiveFull + fullAllow.total;
 
     const stepsHtml =
       '<div class="steps-row">' +
@@ -305,50 +318,89 @@ if (!scales) {
         '<div class="step-box hl"><div class="n">৫ · অনু·৯(২) +ইনক</div><div class="v">৳' + fmt(withInc.pay) + '</div></div>' +
       '</div>';
 
+    // ভাতার নাম + অঙ্ক আলাদা সারিতে (রঙ সামঞ্জস্যপূর্ণ)
+    // মূল = accent নীল, বাড়ি ভাড়া = orange, চিকিৎসা = yellow, টিফিন = muted, গ্রস = green
+    function allowLines(alw) {
+      let lines = '';
+      if (alw.hra > 0) {
+        lines += '<div style="color:#fb923c;font-size:0.76rem;font-weight:600">বাড়ি ভাড়া ৳' + fmt(alw.hra) + '</div>';
+      } else if (govHouse) {
+        lines += '<div style="color:#64748b;font-size:0.76rem">বাড়ি ভাড়া — (সরকারি বাসা)</div>';
+      }
+      lines += '<div style="color:#fde047;font-size:0.76rem;font-weight:600">চিকিৎসা ৳' + fmt(alw.medical) + '</div>';
+      if (alw.tiffin > 0) {
+        lines += '<div style="color:#a78bfa;font-size:0.76rem;font-weight:600">টিফিন ৳' + fmt(alw.tiffin) + '</div>';
+      }
+      return lines;
+    }
+
+    // প্রতিটি ধাপে: মূল বেতন + প্রতিটি ভাতা = গ্রস
     const phaseRows = phases.map(p => {
       const pay = oldBasic + totalIncrease * p.pct / 100;
+      const alw = allowancesFor(pay);
+      const phaseGross = pay + alw.total;
       return '<tr class="' + (p.pct === 40 || p.pct === 50 ? 'active' : '') + '">' +
         '<td><strong>' + p.label + '</strong><br><span style="color:var(--muted);font-size:0.75rem">' + p.note + '</span></td>' +
         '<td class="pct">' + p.pct + '%</td>' +
-        '<td class="amt">৳' + fmt(pay) + '</td></tr>';
+        '<td class="amt">' +
+          '<div style="color:#38bdf8;font-weight:700">মূল ৳' + fmt(pay) + '</div>' +
+          allowLines(alw) +
+          '<div style="color:#4ade80;font-size:0.95rem;font-weight:800;margin-top:3px;border-top:1px solid var(--border);padding-top:3px">গ্রস ৳' + fmt(phaseGross) + '</div>' +
+        '</td></tr>';
     }).join('');
 
     const jul27Pay = jul27.pay;
+    const jul27Alw = allowancesFor(jul27Pay);
+    const jul27Gross = jul27Pay + jul27Alw.total;
     const jul27Row = '<tr>' +
       '<td><strong>জুলাই ২০২৭+ (ইনক্রিমেন্টসহ আনুমানিক)</strong><br><span style="color:var(--muted);font-size:0.75rem">পূর্ণ স্কেল + ১টি বার্ষিক ধাপ</span></td>' +
       '<td class="pct">—</td>' +
-      '<td class="amt">৳' + fmt(jul27Pay) + '</td></tr>';
+      '<td class="amt">' +
+        '<div style="color:#38bdf8;font-weight:700">মূল ৳' + fmt(jul27Pay) + '</div>' +
+        allowLines(jul27Alw) +
+        '<div style="color:#4ade80;font-size:0.95rem;font-weight:800;margin-top:3px;border-top:1px solid var(--border);padding-top:3px">গ্রস ৳' + fmt(jul27Gross) + '</div>' +
+      '</td></tr>';
+
+    // হিরো সাবটাইটেল: শুধু ফিক্সেশন + ইনক্রিমেন্ট (মোট বাদ)
+    let subParts = 'ধাপ ' + withInc.step + ' · পুরনো ৳' + fmt(oldBasic);
+    subParts += '<br>ফিক্সেশন বৃদ্ধি +' + fmt(fixIncrease) + ' (+' + fixPct + '%)';
+    if (incAmount > 0) {
+      subParts += ' · ইনক্রিমেন্ট +' + fmt(incAmount);
+    }
+
 
     document.getElementById('resultBody').innerHTML =
       '<div class="hero">' +
         '<div class="label">৯ম স্কেলে কার্যকর পূর্ণ মূল বেতন (ফিক্সেশন + ১ জুলাই ২৬ ইনক্রিমেন্ট)</div>' +
         '<div class="value">৳' + fmt(effectiveFull) + '</div>' +
-        '<div class="sub">ধাপ ' + withInc.step + ' · পুরনো ৳' + fmt(oldBasic) + ' → বৃদ্ধি +' + fmt(totalIncrease) + ' (+' + pctUp + '%)</div>' +
+        '<div class="sub">' + subParts + '</div>' +
       '</div>' +
 
       stepsHtml +
 
-      '<div class="section">ধাপভিত্তিক কার্যকর মূল বেতন (সারণি-১)</div>' +
+      '<div class="section">ধাপভিত্তিক কার্যকর বেতন (সারণি-১) · মূল + ভাতা = গ্রস</div>' +
       '<table class="tl">' +
-        '<tr><th>সময়কাল</th><th>বাড়তির %</th><th style="text-align:right">কার্যকর মূল বেতন</th></tr>' +
+        '<tr><th>সময়কাল</th><th>বাড়তির %</th><th style="text-align:right">মূল · ভাতা · গ্রস</th></tr>' +
         phaseRows +
         jul27Row +
       '</table>' +
 
-      '<div class="section">নতুন ভাতা (১ জানুয়ারি ২০২৮+ · পূর্ণ মূল বেতনের উপর)</div>' +
+      '<div class="section">নতুন ভাতার বিবরণ · ৩য় ধাপ (১০০% · ৳' + fmt(effectiveFull) + ') · ১ জানুয়ারি ২০২৮+</div>' +
       '<table class="allow-table">' +
-        '<tr><td>বাড়ি ভাড়া' + (govHouse ? ' (সরকারি বাসা)' : ' (' + hraPct + '%)') + '</td><td>৳' + fmt(hra) + '</td></tr>' +
-        '<tr><td>চিকিৎসা</td><td>৳' + fmt(medical) + '</td></tr>' +
-        (tiffin ? '<tr><td>টিফিন</td><td>৳' + fmt(tiffin) + '</td></tr>' : '') +
-        '<tr class="total"><td>মূল + ভাতা (আনুমানিক)</td><td>৳' + fmt(gross) + '</td></tr>' +
+        '<tr><td style="color:#38bdf8">মূল বেতন (ফিক্সেশন + জুলাই ২৬ ইনক্রিমেন্ট)</td><td style="color:#38bdf8">৳' + fmt(effectiveFull) + '</td></tr>' +
+        '<tr><td style="color:#fb923c">বাড়ি ভাড়া' + (govHouse ? ' (সরকারি বাসা)' : ' (' + hraPct + '%)') + '</td><td style="color:#fb923c">৳' + fmt(fullAllow.hra) + '</td></tr>' +
+        '<tr><td style="color:#fde047">চিকিৎসা</td><td style="color:#fde047">৳' + fmt(medical) + '</td></tr>' +
+        (tiffinAmt ? '<tr><td style="color:#a78bfa">টিফিন</td><td style="color:#a78bfa">৳' + fmt(tiffinAmt) + '</td></tr>' : '') +
+        '<tr class="total"><td style="color:#4ade80">গ্রস (৩য় ধাপ · পূর্ণ স্কেল)</td><td style="color:#4ade80">৳' + fmt(gross) + '</td></tr>' +
       '</table>' +
 
       '<div class="note">' +
         '<strong>গেজেট টাইমলাইন:</strong><br>' +
-        '• <strong>অনুচ্ছেদ ৫:</strong> বেস ফিক্সেশন → ৳' + fmt(base.pay) + ' (ধাপ ' + base.step + ', নিয়ম ' + base.rule + ')<br>' +
-        '• <strong>অনুচ্ছেদ ৯(২):</strong> ১ জুলাই ২০২৬-এ ১টি বার্ষিক ইনক্রিমেন্ট → ৳' + fmt(withInc.pay) + ' (ধাপ ' + withInc.step + ')<br>' +
+        '• <strong>অনুচ্ছেদ ৫:</strong> বেস ফিক্সেশন → ৳' + fmt(base.pay) + ' (ধাপ ' + base.step + ', নিয়ম ' + base.rule + ') · বৃদ্ধি +' + fmt(fixIncrease) + ' (+' + fixPct + '%)<br>' +
+        '• <strong>অনুচ্ছেদ ৯(২):</strong> ১ জুলাই ২০২৬-এ ১টি বার্ষিক ইনক্রিমেন্ট → ৳' + fmt(withInc.pay) + ' (ধাপ ' + withInc.step + ')' +
+          (incAmount > 0 ? ' · ইনক্রিমেন্ট +' + fmt(incAmount) : ' · ইনক্রিমেন্ট নেই (সর্বোচ্চ ধাপ)') + '<br>' +
         '• ধাপভিত্তিক % হিসাব হয় এই <strong>ইনক্রিমেন্টসহ</strong> পূর্ণ মূল বেতনের বাড়তির উপর<br>' +
-        '• জুলাই ২৬ – ডিসেম্বর ২৭: ভাতা সাধারণত পুরনো হারে · নতুন ভাতার হার ১ জানুয়ারি ২০২৮ থেকে' +
+        '• উপরের ভাতা <strong>নতুন হারে</strong> দেখানো (১ জানুয়ারি ২০২৮+) · জুলাই ২৬–ডিসেম্বর ২৭ ভাতা সাধারণত পুরনো হারে থাকবে' +
       '</div>';
   }
 
