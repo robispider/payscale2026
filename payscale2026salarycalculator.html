@@ -202,10 +202,10 @@ if (!scales) {
 } else {
   function fmt(n) { return Math.round(n).toLocaleString('en-IN'); }
 
-  // পুরনো স্কেলে ইনক্রিমেন্ট যোগ করে সঠিক বেসিক বের করার ফাংশন
+  // পুরনো স্কেলে ইনক্রিমেন্ট যোগ করে সঠিক বেসিক বের করার ফাংশন (পুরনো ভাতার হিসাবের জন্য)
   function getOldBasicAt(steps, currentBasic, incrementsCount) {
     const idx = steps.indexOf(currentBasic);
-    if (idx === -1) return currentBasic; // fallback
+    if (idx === -1) return currentBasic;
     return steps[Math.min(idx + incrementsCount, steps.length - 1)];
   }
 
@@ -285,36 +285,44 @@ if (!scales) {
     const govHouse = document.getElementById('govHouse').checked;
     const wantTiffin = document.getElementById('tiffin').checked;
 
+    // --- ১. প্রকৃত বেতন নির্ধারণ (Actual Fixation & Increments) ---
     const base = fixBase(oldBasic, g);
     const withInc26 = addIncrement(base.step, g); 
-    const targetNew26 = withInc26.pay; // July 2026 fully incremented target
+    const targetNew26 = withInc26.pay; 
 
     const withInc27 = addIncrement(withInc26.step, g);
-    const targetNew27 = withInc27.pay; // July 2027 fully incremented target
+    const targetNew27 = withInc27.pay; 
 
     const fixIncrease = base.pay - oldBasic;
     const fixPct = ((fixIncrease / oldBasic) * 100).toFixed(1);
     const incAmount = targetNew26 - base.pay;
     
-    // ** The Magic Fix for Proportional / Loss calculation **
-    // 1. Get the natural increments of the OLD scale for proper comparison
+    // পুরনো ভাতার হিসাবের জন্য পুরনো স্কেলের ইনক্রিমেন্টকৃত বেসিক
     const oldSteps = scales[g].old;
     const oldJul26Basic = getOldBasicAt(oldSteps, oldBasic, 1);
     const oldJul27Basic = getOldBasicAt(oldSteps, oldBasic, 2);
 
+    // --- ২. অনুপাতিক আদর্শ বেতন নির্ধারণ (Ideal Fixation once, then step-by-step increments) ---
     const oldStart = oldSteps[0];
     const newStart = scales[g].new[0];
     const ratio = newStart / oldStart;
 
-    // 2. Define the TRUE ideal proportional targets (including old increments)
-    const idealJul26Full = Math.round(oldJul26Basic * ratio);
-    const idealJul27Full = Math.round(oldJul27Basic * ratio);
+    // প্রথমে ৩০ জুন ২০২৬-এর বেসিককে অনুপাত দিয়ে গুণ করে নতুন স্কেলে একবারই Base Step ফিক্স করা হলো
+    const idealBaseRaw = Math.round(oldBasic * ratio);
+    const idealBase = findNextOrExact(idealBaseRaw, scales[g].new);
+
+    // এরপর ১ জুলাই ২০২৬-এ ১ ধাপ ইনক্রিমেন্ট (Next Step)
+    const idealInc26 = addIncrement(idealBase.step, g);
+    const idealJul26Full = idealInc26.pay;
+
+    // এরপর ১ জুলাই ২০২৭-এ আরও ১ ধাপ ইনক্রিমেন্ট (Next Step)
+    const idealInc27 = addIncrement(idealInc26.step, g);
+    const idealJul27Full = idealInc27.pay;
 
     const phases = phaseList(g);
 
     function allowancesFor(payAmt, isOldRates, currentOldBasicRef) {
       if (isOldRates) {
-        // Old rules: Use the actual OLD BASIC from that time period for HRA slab
         let slab = allowData.hra2015.find(s => currentOldBasicRef <= s.maxBasic);
         let rawHra = Math.round(currentOldBasicRef * slab[area].pct / 100);
         let finalHra = govHouse ? 0 : Math.max(rawHra, slab[area].min); 
@@ -323,7 +331,6 @@ if (!scales) {
         const tiff = (wantTiffin && g >= 11) ? 200 : 0; 
         return { hra: finalHra, medical: med, tiffin: tiff, total: finalHra + med + tiff };
       } else {
-        // New rules: Use the new incremented basic pay
         let slab = allowData.hra2026.find(s => g >= s.minGrade && g <= s.maxGrade);
         let finalHra = govHouse ? 0 : Math.round(payAmt * slab[area].pct / 100);
         
@@ -360,20 +367,17 @@ if (!scales) {
       let pay, idealPhasePay, oldRefBasic;
 
       if (p.id === 1 || p.id === 2) {
-        // Phase 1 & 2: Time is Jul 2026 - Jun 2027. We compare against the Jul 26 Incremented targets.
         pay = oldBasic + Math.round((targetNew26 - oldBasic) * p.pct / 100);
         idealPhasePay = oldBasic + Math.round((idealJul26Full - oldBasic) * p.pct / 100);
-        oldRefBasic = oldJul26Basic; // 2015 allowances calculated on the Jul 26 old basic
+        oldRefBasic = oldJul26Basic; 
       } else if (p.id === 3) {
-        // Phase 3: Time is Jul 2027 - Dec 2027. New 100% incremented target applied.
         pay = targetNew27;
-        idealPhasePay = idealJul27Full; // True proportional comparison includes Jul 27 increment
-        oldRefBasic = oldJul27Basic;    // 2015 allowances calculated on the Jul 27 old basic
+        idealPhasePay = idealJul27Full; 
+        oldRefBasic = oldJul27Basic;    
       } else {
-        // Phase 4: Time is Jan 2028+. Allowances become NEW.
         pay = targetNew27; 
         idealPhasePay = idealJul27Full;
-        oldRefBasic = oldJul27Basic;    // Unused by new rules, but kept for consistency
+        oldRefBasic = oldJul27Basic;    
       }
 
       const isOld = !p.fullAllow;
@@ -382,23 +386,40 @@ if (!scales) {
 
       const ratioAlw = allowancesFor(idealPhasePay, isOld, oldRefBasic);
       const ratioGross = idealPhasePay + ratioAlw.total;
-      const lossAmt = idealPhasePay - pay; // Loss in Basic Pay
+      
+      const basicLoss = idealPhasePay - pay;
+      const grossLoss = ratioGross - phaseGross;
 
-      const lossHtml = lossAmt > 1
-        ? '<div style="color:#38bdf8;font-weight:700">মূল ৳' + fmt(idealPhasePay) + '</div>' +
-          '<div style="color:#4ade80;font-size:0.9rem;font-weight:700;margin-top:2px">গ্রস ৳' + fmt(ratioGross) + '</div>' +
-          '<div style="color:#f87171;font-size:0.72rem;margin-top:3px;font-weight:700">ক্ষতি −৳' + fmt(lossAmt) + '</div>'
-        : '<div style="color:#4ade80;font-size:0.8rem">সমান / বেশি</div>';
+      let leftHtml = '';
+      let rightHtml = '';
+
+      if (basicLoss > 1) { // Ideal pay is structurally aligned to steps, any gap > 1 is a valid loss
+        // বাম কলাম: অদৃশ্য স্পেসার দিয়ে ডান কলামের ক্ষতি লেখার সাথে উচ্চতা ঠিক রাখা হয়েছে
+        leftHtml = 
+          '<div style="color:#38bdf8;font-weight:700">মূল ৳' + fmt(pay) + '<br><span style="font-size:0.72rem;visibility:hidden">.</span></div>' +
+          allowLines(alw) +
+          '<div style="color:#4ade80;font-size:0.95rem;font-weight:800;margin-top:3px;border-top:1px solid var(--border);padding-top:3px">গ্রস ৳' + fmt(phaseGross) + '<br><span style="font-size:0.75rem;visibility:hidden">.</span></div>';
+
+        // ডান কলাম: মূল বেতনের নিচে "বেসিক ক্ষতি" এবং গ্রস বেতনের নিচে "গ্রস ক্ষতি"
+        rightHtml = 
+          '<div style="color:#38bdf8;font-weight:700">মূল ৳' + fmt(idealPhasePay) + '<br><span style="color:#f87171;font-size:0.72rem;font-weight:600">বেসিক ক্ষতি −৳' + fmt(basicLoss) + '</span></div>' +
+          allowLines(ratioAlw) +
+          '<div style="color:#4ade80;font-size:0.95rem;font-weight:800;margin-top:3px;border-top:1px solid var(--border);padding-top:3px">গ্রস ৳' + fmt(ratioGross) + '<br><span style="color:#f87171;font-size:0.75rem;font-weight:700">গ্রস ক্ষতি −৳' + fmt(grossLoss) + '</span></div>';
+      } else {
+        // কোনো ক্ষতি নেই
+        leftHtml = 
+          '<div style="color:#38bdf8;font-weight:700">মূল ৳' + fmt(pay) + '</div>' +
+          allowLines(alw) +
+          '<div style="color:#4ade80;font-size:0.95rem;font-weight:800;margin-top:3px;border-top:1px solid var(--border);padding-top:3px">গ্রস ৳' + fmt(phaseGross) + '</div>';
+          
+        rightHtml = '<div style="color:#4ade80;font-size:0.85rem;font-weight:600;margin-top:4px">সমান / বেশি</div>';
+      }
 
       return '<tr class="' + (p.pct === 40 || p.pct === 50 ? 'active' : '') + '">' +
         '<td><strong>' + p.label + '</strong><br><span style="color:var(--muted);font-size:0.75rem">' + p.note + '</span></td>' +
         '<td class="pct">' + p.pct + '%</td>' +
-        '<td class="amt">' +
-          '<div style="color:#38bdf8;font-weight:700">মূল ৳' + fmt(pay) + '</div>' +
-          allowLines(alw) +
-          '<div style="color:#4ade80;font-size:0.95rem;font-weight:800;margin-top:3px;border-top:1px solid var(--border);padding-top:3px">গ্রস ৳' + fmt(phaseGross) + '</div>' +
-        '</td>' +
-        '<td class="amt" style="vertical-align:middle">' + lossHtml + '</td></tr>';
+        '<td class="amt" style="vertical-align:top">' + leftHtml + '</td>' +
+        '<td class="amt" style="vertical-align:top">' + rightHtml + '</td></tr>';
     }).join('');
 
     let subParts = 'ধাপ ' + withInc26.step + ' · পুরনো ৳' + fmt(oldBasic);
@@ -421,12 +442,14 @@ if (!scales) {
         '<tr><th>সময়কাল</th><th>বাড়তির %</th><th style="text-align:right">মূল · ভাতা · গ্রস</th><th style="text-align:right">অনুপাতিক হলে (আদর্শ)<br><span style="font-weight:500;font-size:0.72rem;color:#94a3b8">মূল · গ্রস</span></th></tr>' +
         phaseRows +
       '</table>' +
-      '<p style="font-size:0.72rem;color:var(--muted);margin-top:8px;text-align:center">অনুপাতিক আদর্শ = প্রতি বছরের ইনক্রিমেন্টসহ পুরনো বেতন × (নতুন প্রারম্ভিক ÷ পুরনো প্রারম্ভিক)</p>' +
+      '<p style="font-size:0.72rem;color:var(--muted);margin-top:8px;text-align:center">অনুপাতিক আদর্শ = শুরুতে (পুরাতন বেসিক × বৃদ্ধির হার) দিয়ে নতুন স্কেলের পরবর্তী উচ্চতর ধাপে বেস ফিক্সেশন, এবং পরবর্তীতে ধাপ অনুযায়ী নিয়মিত ইনক্রিমেন্ট।</p>' +
 
       '<div class="note">' +
-        '<strong>এই ক্যালকুলেটরটি কেন সবচেয়ে নির্ভুল?</strong><br>' +
-        '• <strong>সঠিক অনুপাতিক ক্ষতি:</strong> অন্যান্য ক্যালকুলেটর অনুপাতিক বেতনের সাথে ২০২৬ ও ২০২৭ এর ইনক্রিমেন্ট যোগ করতে ভুলে যায়, যার ফলে ক্ষতির পরিমাণ কম দেখায়। এই ক্যালকুলেটরে ইনক্রিমেন্টসহ ১০০% সঠিক ক্ষতি হিসাব করা হয়েছে।<br>' +
-        '• <strong>ভাতার হিসাব:</strong> গেজেট অনুযায়ী ১-৩ ধাপে ভাতা ২০১৫-এর পুরনো হারেই (সেই সময়ের পুরনো বেসিকের ওপর) দেয়া হয়েছে, এবং পূর্ণ নতুন ভাতা ৪র্থ ধাপ থেকে কার্যকর দেখানো হয়েছে।' +
+        '<strong>গেজেট টাইমলাইন ও নিয়মাবলি:</strong><br>' +
+        '• <strong>অনুচ্ছেদ ৫ (ফিক্সেশন):</strong> বেস ফিক্সেশন → ৳' + fmt(base.pay) + ' (ধাপ ' + base.step + ', নিয়ম ' + base.rule + ')<br>' +
+        '• <strong>অনুচ্ছেদ ৯(২):</strong> ১ জুলাই ২০২৬-এ ১টি ইনক্রিমেন্ট → ৳' + fmt(targetNew26) + ' (ধাপ ' + withInc26.step + ')<br>' +
+        '• ১ম ও ২য় ধাপে শতাংশের হিসাব এই <strong>ইনক্রিমেন্টসহ</strong> পূর্ণ মূল বেতনের ওপর করা হয়েছে। ৩য় ও ৪র্থ ধাপে ২০২৭ সালের ইনক্রিমেন্ট যুক্ত করা হয়েছে।<br>' +
+        '• ১-৩ ধাপে ভাতা ২০১৫-এর পুরনো হারেই (ন্যূনতম সীমা বিবেচনা করে) দেয়া হয়েছে, এবং পূর্ণ নতুন ভাতা ৪র্থ ধাপ থেকে কার্যকর দেখানো হয়েছে।' +
       '</div>';
   }
 

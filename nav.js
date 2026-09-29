@@ -14,6 +14,7 @@
 
   const current = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
 
+  // 1. Render Navigation Bar
   const nav = document.createElement('nav');
   nav.id = 'main-nav';
   nav.innerHTML = links.map(l => {
@@ -21,6 +22,7 @@
     return `<a href="${l.href}" class="${active}">${l.label}</a>`;
   }).join('');
 
+  // 2. Inject Styles
   const style = document.createElement('style');
   style.textContent = `
     #main-nav {
@@ -39,22 +41,26 @@
   document.head.appendChild(style);
   document.body.insertBefore(nav, document.body.firstChild);
 
-  // --- GOOGLE ANALYTICS AUTO-INTEGRATION ---
+  // --- GOOGLE ANALYTICS (GA4) AUTO-INTEGRATION ---
   const gaId = 'G-82EZ6X0KK6';
 
-  // 1. Dynamically create and append the gtag.js script library
-  const gaScript = document.createElement('script');
-  gaScript.async = true;
-  gaScript.src = `https://googletagmanager.com{gaId}`;
-  document.head.appendChild(gaScript);
+  // Prevent duplicate insertion if already loaded
+  if (!document.querySelector(`script[src*="${gaId}"]`)) {
+    // 1. Create and inject gtag.js library
+    const gaScript = document.createElement('script');
+    gaScript.async = true;
+    gaScript.src = `https://www.googletagmanager.com/gtag/js?id=${gaId}`;
+    document.head.appendChild(gaScript);
 
-  // 2. Initialize the global dataLayer and gtag function configurations
-  window.dataLayer = window.dataLayer || [];
-  window.gtag = function() {
-    window.dataLayer.push(arguments);
-  };
-  
-  // 3. Fire the initial tracking configurations
-  window.gtag('js', new Date());
-  window.gtag('config', gaId);
+    // 2. Setup standard dataLayer & gtag function
+    window.dataLayer = window.dataLayer || [];
+    function gtag() {
+      window.dataLayer.push(arguments);
+    }
+    window.gtag = gtag; // make available globally
+
+    // 3. Configure and trigger pageview
+    gtag('js', new Date());
+    gtag('config', gaId);
+  }
 })();
