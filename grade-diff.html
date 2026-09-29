@@ -216,6 +216,12 @@
     max-width: 900px;
     margin: 0 auto;
   }
+  .error {
+    text-align: center;
+    color: #f87171;
+    padding: 20px;
+    font-size: 1rem;
+  }
 
   @media print {
     body { background: white; color: black; }
@@ -278,305 +284,300 @@
 <div class="tooltip" id="tooltip"></div>
 
 <script>
-const scales = {
-  2015: {
-    1:{start:78000,end:78000}, 2:{start:66000,end:76490}, 3:{start:56500,end:74400},
-    4:{start:50000,end:71200}, 5:{start:43000,end:69850}, 6:{start:35500,end:67010},
-    7:{start:29000,end:63410}, 8:{start:23000,end:55470}, 9:{start:22000,end:53060},
-    10:{start:16000,end:38640},11:{start:12500,end:30230},12:{start:11300,end:27300},
-    13:{start:11000,end:26590},14:{start:10200,end:24680},15:{start:9700,end:23490},
-    16:{start:9300,end:22490},17:{start:9000,end:21800},18:{start:8800,end:21310},
-    19:{start:8500,end:20570},20:{start:8250,end:20010}
-  },
-  2026: {
-    1:{start:156000,end:156000},2:{start:132000,end:153000},3:{start:113000,end:148800},
-    4:{start:100000,end:142400},5:{start:86000,end:139700},6:{start:71000,end:134000},
-    7:{start:58000,end:126800},8:{start:46000,end:110800},9:{start:44000,end:105900},
-    10:{start:32000,end:77300},11:{start:25000,end:60500},12:{start:24300,end:58700},
-    13:{start:24000,end:58000},14:{start:23500,end:56800},15:{start:22800,end:55200},
-    16:{start:21900,end:52900},17:{start:21400,end:51900},18:{start:21000,end:50900},
-    19:{start:20500,end:49600},20:{start:20000,end:48400}
+// data.js থেকে start/end তৈরি – কোনো ডুপ্লিকেট নেই
+function buildScalesFromData() {
+  if (!window.PayScaleData || !window.PayScaleData.full2026) return null;
+
+  const full = window.PayScaleData.full2026;
+  const result = { 2015: {}, 2026: {} };
+
+  for (let g = 1; g <= 20; g++) {
+    const d = full[g];
+    if (!d) continue;
+    result[2015][g] = {
+      start: d.old[0],
+      end: d.old[d.old.length - 1]
+    };
+    result[2026][g] = {
+      start: d.new[0],
+      end: d.new[d.new.length - 1]
+    };
   }
-};
-
-let currentYear = 2026;
-let sortCol = 0;
-let sortAsc = true;
-let selected = []; // left-side grade of selected rows
-
-function format(n) {
-  return n.toLocaleString('en-IN');
+  return result;
 }
 
-function buildRows() {
-  const data = scales[currentYear];
-  const otherYear = currentYear === 2026 ? 2015 : 2026;
-  const other = scales[otherYear];
-  const rows = [];
+const scales = buildScalesFromData();
 
-  for (let g = 20; g >= 2; g--) {
-    const lower = data[g];
-    const higher = data[g - 1];
-    const startDiff = higher.start - lower.start;
-    const endDiff   = higher.end   - lower.end;
-    const startPct  = (startDiff / lower.start) * 100;
-    const endPct    = (endDiff   / lower.end)   * 100;
+if (!scales) {
+  document.getElementById('diffBody').innerHTML =
+    '<tr><td colspan="7" class="error">data.js লোড হয়নি। নিশ্চিত করুন data.js একই ফোল্ডারে আছে।</td></tr>';
+} else {
+  let currentYear = 2026;
+  let sortCol = 0;
+  let sortAsc = true;
+  let selected = []; // left-side grade of selected rows
 
-    rows.push({
-      g,
-      lowerStart: lower.start,
-      higherStart: higher.start,
-      startDiff, startPct,
-      lowerEnd: lower.end,
-      higherEnd: higher.end,
-      endDiff, endPct,
-      other: {
-        year: otherYear,
-        lowerStart: other[g].start,
-        lowerEnd: other[g].end,
-        higherStart: other[g-1].start,
-        higherEnd: other[g-1].end,
-        startDiff: other[g-1].start - other[g].start,
-        endDiff: other[g-1].end - other[g].end,
-        startPct: ((other[g-1].start - other[g].start) / other[g].start) * 100,
-        endPct: ((other[g-1].end - other[g].end) / other[g].end) * 100
+  function format(n) {
+    return n.toLocaleString('en-IN');
+  }
+
+  function buildRows() {
+    const data = scales[currentYear];
+    const otherYear = currentYear === 2026 ? 2015 : 2026;
+    const other = scales[otherYear];
+    const rows = [];
+
+    for (let g = 20; g >= 2; g--) {
+      const lower = data[g];
+      const higher = data[g - 1];
+      const startDiff = higher.start - lower.start;
+      const endDiff   = higher.end   - lower.end;
+      const startPct  = (startDiff / lower.start) * 100;
+      const endPct    = (endDiff   / lower.end)   * 100;
+
+      rows.push({
+        g,
+        lowerStart: lower.start,
+        higherStart: higher.start,
+        startDiff, startPct,
+        lowerEnd: lower.end,
+        higherEnd: higher.end,
+        endDiff, endPct,
+        other: {
+          year: otherYear,
+          lowerStart: other[g].start,
+          lowerEnd: other[g].end,
+          higherStart: other[g-1].start,
+          higherEnd: other[g-1].end,
+          startDiff: other[g-1].start - other[g].start,
+          endDiff: other[g-1].end - other[g].end,
+          startPct: ((other[g-1].start - other[g].start) / other[g].start) * 100,
+          endPct: ((other[g-1].end - other[g].end) / other[g].end) * 100
+        }
+      });
+    }
+    return rows;
+  }
+
+  function sortRows(rows) {
+    rows.sort((a, b) => {
+      let va, vb;
+      switch (sortCol) {
+        case 0: va = a.g; vb = b.g; break;
+        case 1: va = a.lowerStart; vb = b.lowerStart; break;
+        case 2: va = a.higherStart; vb = b.higherStart; break;
+        case 3: va = a.startDiff; vb = b.startDiff; break;
+        case 4: va = a.lowerEnd; vb = b.lowerEnd; break;
+        case 5: va = a.higherEnd; vb = b.higherEnd; break;
+        case 6: va = a.endDiff; vb = b.endDiff; break;
+        default: va = a.g; vb = b.g;
+      }
+      return sortAsc ? va - vb : vb - va;
+    });
+    return rows;
+  }
+
+  function renderTable() {
+    let rows = buildRows();
+    rows = sortRows(rows);
+
+    const tbody = document.getElementById('diffBody');
+    tbody.innerHTML = '';
+
+    rows.forEach(r => {
+      const startClass = r.startDiff >= 0 ? 'pos' : 'neg';
+      const endClass   = r.endDiff   >= 0 ? 'pos' : 'neg';
+      const isSelected = selected.includes(r.g);
+
+      const tr = document.createElement('tr');
+      if (isSelected) tr.classList.add('selected');
+      tr.dataset.g = r.g;
+
+      tr.innerHTML = `
+        <td class="grade">${r.g} → ${r.g-1}</td>
+        <td class="salary">${format(r.lowerStart)}</td>
+        <td class="salary">${format(r.higherStart)}</td>
+        <td class="diff-cell ${startClass}">
+          <span class="diff-amount">${r.startDiff>=0?'+':''}${format(r.startDiff)}</span>
+          <span class="diff-pct">(${r.startPct.toFixed(1)}%)</span>
+        </td>
+        <td class="salary">${format(r.lowerEnd)}</td>
+        <td class="salary">${format(r.higherEnd)}</td>
+        <td class="diff-cell ${endClass}">
+          <span class="diff-amount">${r.endDiff>=0?'+':''}${format(r.endDiff)}</span>
+          <span class="diff-pct">(${r.endPct.toFixed(1)}%)</span>
+        </td>
+      `;
+
+      tr.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleSelect(r.g);
+      });
+
+      tr.addEventListener('mouseenter', (e) => showTooltip(e, r));
+      tr.addEventListener('mousemove', moveTooltip);
+      tr.addEventListener('mouseleave', hideTooltip);
+
+      tbody.appendChild(tr);
+    });
+
+    document.querySelectorAll('th').forEach(th => {
+      const col = +th.dataset.col;
+      const icon = th.querySelector('.sort-icon');
+      if (col === sortCol) {
+        th.classList.add('sorted');
+        icon.textContent = sortAsc ? '▲' : '▼';
+      } else {
+        th.classList.remove('sorted');
+        icon.textContent = '▲';
       }
     });
+
+    drawConnector();
   }
-  return rows;
-}
 
-function sortRows(rows) {
-  rows.sort((a, b) => {
-    let va, vb;
-    switch (sortCol) {
-      case 0: va = a.g; vb = b.g; break;
-      case 1: va = a.lowerStart; vb = b.lowerStart; break;
-      case 2: va = a.higherStart; vb = b.higherStart; break;
-      case 3: va = a.startDiff; vb = b.startDiff; break;
-      case 4: va = a.lowerEnd; vb = b.lowerEnd; break;
-      case 5: va = a.higherEnd; vb = b.higherEnd; break;
-      case 6: va = a.endDiff; vb = b.endDiff; break;
-      default: va = a.g; vb = b.g;
+  function toggleSelect(g) {
+    const idx = selected.indexOf(g);
+    if (idx >= 0) {
+      selected.splice(idx, 1);
+    } else {
+      selected.push(g);
+      if (selected.length > 2) selected.shift();
     }
-    return sortAsc ? va - vb : vb - va;
-  });
-  return rows;
-}
+    renderTable();
+  }
 
-function renderTable() {
-  let rows = buildRows();
-  rows = sortRows(rows);
-
-  const tbody = document.getElementById('diffBody');
-  tbody.innerHTML = '';
-
-  rows.forEach(r => {
-    const startClass = r.startDiff >= 0 ? 'pos' : 'neg';
-    const endClass   = r.endDiff   >= 0 ? 'pos' : 'neg';
-    const isSelected = selected.includes(r.g);
-
-    const tr = document.createElement('tr');
-    if (isSelected) tr.classList.add('selected');
-    tr.dataset.g = r.g;
-
-    tr.innerHTML = `
-      <td class="grade">${r.g} → ${r.g-1}</td>
-      <td class="salary">${format(r.lowerStart)}</td>
-      <td class="salary">${format(r.higherStart)}</td>
-      <td class="diff-cell ${startClass}">
-        <span class="diff-amount">${r.startDiff>=0?'+':''}${format(r.startDiff)}</span>
-        <span class="diff-pct">(${r.startPct.toFixed(1)}%)</span>
-      </td>
-      <td class="salary">${format(r.lowerEnd)}</td>
-      <td class="salary">${format(r.higherEnd)}</td>
-      <td class="diff-cell ${endClass}">
-        <span class="diff-amount">${r.endDiff>=0?'+':''}${format(r.endDiff)}</span>
-        <span class="diff-pct">(${r.endPct.toFixed(1)}%)</span>
-      </td>
+  function showTooltip(e, r) {
+    const o = r.other;
+    const tip = document.getElementById('tooltip');
+    tip.innerHTML = `
+      <strong class="oy">${o.year} স্কেল</strong> – সম্পূর্ণ তথ্য<br><br>
+      <strong>গ্রেড ${r.g} → ${r.g-1}</strong><br>
+      প্রারম্ভিক: ${format(o.lowerStart)} → ${format(o.higherStart)}<br>
+      ব্যবধান: ${o.startDiff>=0?'+':''}${format(o.startDiff)} (${o.startPct.toFixed(1)}%)<br>
+      সর্বোচ্চ: ${format(o.lowerEnd)} → ${format(o.higherEnd)}<br>
+      ব্যবধান: ${o.endDiff>=0?'+':''}${format(o.endDiff)} (${o.endPct.toFixed(1)}%)
     `;
+    tip.style.display = 'block';
+    moveTooltip(e);
+  }
 
-    tr.addEventListener('click', (e) => {
-      e.stopPropagation();
-      toggleSelect(r.g);
-    });
+  function moveTooltip(e) {
+    const tip = document.getElementById('tooltip');
+    tip.style.left = (e.pageX + 14) + 'px';
+    tip.style.top  = (e.pageY + 14) + 'px';
+  }
 
-    tr.addEventListener('mouseenter', (e) => showTooltip(e, r));
-    tr.addEventListener('mousemove', moveTooltip);
-    tr.addEventListener('mouseleave', hideTooltip);
+  function hideTooltip() {
+    document.getElementById('tooltip').style.display = 'none';
+  }
 
-    tbody.appendChild(tr);
-  });
+  function drawConnector() {
+    const svg = document.getElementById('connectorSvg');
+    const label = document.getElementById('diffLabel');
+    const panel = document.getElementById('connectorPanel');
+    const tableWrap = document.getElementById('tableWrap');
+
+    svg.innerHTML = '';
+    label.style.display = 'none';
+
+    if (selected.length !== 2) return;
+
+    const rows = Array.from(document.querySelectorAll('#diffBody tr'));
+    const tr1 = rows.find(tr => +tr.dataset.g === selected[0]);
+    const tr2 = rows.find(tr => +tr.dataset.g === selected[1]);
+    if (!tr1 || !tr2) return;
+
+    const panelRect = panel.getBoundingClientRect();
+    const r1 = tr1.getBoundingClientRect();
+    const r2 = tr2.getBoundingClientRect();
+
+    const y1 = r1.top + r1.height/2 - panelRect.top;
+    const y2 = r2.top + r2.height/2 - panelRect.top;
+    const xStart = 8;
+    const xMid  = 55;
+
+    const tableHeight = tableWrap.scrollHeight;
+    svg.setAttribute('height', tableHeight);
+    panel.style.height = tableHeight + 'px';
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    const d = `M ${xStart} ${y1} 
+               C ${xMid} ${y1}, ${xMid} ${y2}, ${xStart} ${y2}`;
+    path.setAttribute('d', d);
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', '#fde047');
+    path.setAttribute('stroke-width', '2.8');
+    path.setAttribute('stroke-linecap', 'round');
+    svg.appendChild(path);
+
+    function drawArrow(x, y) {
+      const size = 9;
+      const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+      arrow.setAttribute('points', `${x},${y} ${x+size},${y-size*0.7} ${x+size},${y+size*0.7}`);
+      arrow.setAttribute('fill', '#fde047');
+      svg.appendChild(arrow);
+    }
+
+    drawArrow(xStart, y1);
+    drawArrow(xStart, y2);
+
+    const allGrades = [
+      selected[0], selected[0] - 1,
+      selected[1], selected[1] - 1
+    ];
+    const gHigh = Math.min(...allGrades);
+    const gLow  = Math.max(...allGrades);
+
+    const data = scales[currentYear];
+    const startHigh = data[gHigh].start;
+    const startLow  = data[gLow].start;
+    const endHigh   = data[gHigh].end;
+    const endLow    = data[gLow].end;
+
+    const startDiff = startHigh - startLow;
+    const endDiff   = endHigh - endLow;
+    const startPct  = ((startDiff / startLow) * 100).toFixed(1);
+    const endPct    = ((endDiff / endLow) * 100).toFixed(1);
+
+    label.innerHTML = `
+      <div class="title">গ্রেড ${gLow} vs ${gHigh}</div>
+      <div class="line">প্রারম্ভিক<br>
+        <span class="val">${format(startLow)} → ${format(startHigh)}</span><br>
+        <span class="val">Δ ${format(Math.abs(startDiff))} (${startPct}%)</span>
+      </div>
+      <div class="line" style="margin-top:6px">সর্বোচ্চ<br>
+        <span class="val">${format(endLow)} → ${format(endHigh)}</span><br>
+        <span class="val">Δ ${format(Math.abs(endDiff))} (${endPct}%)</span>
+      </div>
+    `;
+    label.style.display = 'block';
+    label.style.left = (xMid + 8) + 'px';
+    label.style.top  = ((y1 + y2) / 2) + 'px';
+  }
 
   document.querySelectorAll('th').forEach(th => {
-    const col = +th.dataset.col;
-    const icon = th.querySelector('.sort-icon');
-    if (col === sortCol) {
-      th.classList.add('sorted');
-      icon.textContent = sortAsc ? '▲' : '▼';
-    } else {
-      th.classList.remove('sorted');
-      icon.textContent = '▲';
-    }
+    th.addEventListener('click', () => {
+      const col = +th.dataset.col;
+      if (sortCol === col) sortAsc = !sortAsc;
+      else { sortCol = col; sortAsc = true; }
+      renderTable();
+    });
   });
 
-  drawConnector();
-}
-
-function toggleSelect(g) {
-  const idx = selected.indexOf(g);
-  if (idx >= 0) {
-    selected.splice(idx, 1);
-  } else {
-    selected.push(g);
-    if (selected.length > 2) selected.shift();
-  }
-  renderTable();
-}
-
-function showTooltip(e, r) {
-  const o = r.other;
-  const tip = document.getElementById('tooltip');
-  tip.innerHTML = `
-    <strong class="oy">${o.year} স্কেল</strong> – সম্পূর্ণ তথ্য<br><br>
-    <strong>গ্রেড ${r.g} → ${r.g-1}</strong><br>
-    প্রারম্ভিক: ${format(o.lowerStart)} → ${format(o.higherStart)}<br>
-    ব্যবধান: ${o.startDiff>=0?'+':''}${format(o.startDiff)} (${o.startPct.toFixed(1)}%)<br>
-    সর্বোচ্চ: ${format(o.lowerEnd)} → ${format(o.higherEnd)}<br>
-    ব্যবধান: ${o.endDiff>=0?'+':''}${format(o.endDiff)} (${o.endPct.toFixed(1)}%)
-  `;
-  tip.style.display = 'block';
-  moveTooltip(e);
-}
-
-function moveTooltip(e) {
-  const tip = document.getElementById('tooltip');
-  tip.style.left = (e.pageX + 14) + 'px';
-  tip.style.top  = (e.pageY + 14) + 'px';
-}
-
-function hideTooltip() {
-  document.getElementById('tooltip').style.display = 'none';
-}
-
-function drawConnector() {
-  const svg = document.getElementById('connectorSvg');
-  const label = document.getElementById('diffLabel');
-  const panel = document.getElementById('connectorPanel');
-  const tableWrap = document.getElementById('tableWrap');
-
-  svg.innerHTML = '';
-  label.style.display = 'none';
-
-  if (selected.length !== 2) return;
-
-  const rows = Array.from(document.querySelectorAll('#diffBody tr'));
-  const tr1 = rows.find(tr => +tr.dataset.g === selected[0]);
-  const tr2 = rows.find(tr => +tr.dataset.g === selected[1]);
-  if (!tr1 || !tr2) return;
-
-  const panelRect = panel.getBoundingClientRect();
-  const r1 = tr1.getBoundingClientRect();
-  const r2 = tr2.getBoundingClientRect();
-
-  const y1 = r1.top + r1.height/2 - panelRect.top;
-  const y2 = r2.top + r2.height/2 - panelRect.top;
-  const xStart = 8;   // near the table
-  const xMid  = 55;  // curve control
-
-  const tableHeight = tableWrap.scrollHeight;
-  svg.setAttribute('height', tableHeight);
-  panel.style.height = tableHeight + 'px';
-
-  // Smooth cubic curve
-  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  const d = `M ${xStart} ${y1} 
-             C ${xMid} ${y1}, ${xMid} ${y2}, ${xStart} ${y2}`;
-  path.setAttribute('d', d);
-  path.setAttribute('fill', 'none');
-  path.setAttribute('stroke', '#fde047');
-  path.setAttribute('stroke-width', '2.8');
-  path.setAttribute('stroke-linecap', 'round');
-  svg.appendChild(path);
-
-  // Arrow head helper
-  function drawArrow(x, y, pointingLeft = true) {
-    const size = 9;
-    const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-    if (pointingLeft) {
-      // points left toward the row
-      arrow.setAttribute('points', `${x},${y} ${x+size},${y-size*0.7} ${x+size},${y+size*0.7}`);
-    } else {
-      arrow.setAttribute('points', `${x},${y} ${x-size},${y-size*0.7} ${x-size},${y+size*0.7}`);
-    }
-    arrow.setAttribute('fill', '#fde047');
-    svg.appendChild(arrow);
-  }
-
-  // Arrows pointing to the selected rows (leftward)
-  drawArrow(xStart, y1, true);
-  drawArrow(xStart, y2, true);
-
-  // === Correct comparison logic ===
-  // Take all grades involved in the two selected pairs, then use the extreme ones
-  // e.g. selected 2→1 and 5→4  →  grades 1,2,4,5  →  compare 5 vs 1
-  const allGrades = [
-    selected[0], selected[0] - 1,
-    selected[1], selected[1] - 1
-  ];
-  const gHigh = Math.min(...allGrades); // smallest number = highest rank
-  const gLow  = Math.max(...allGrades); // largest number = lowest rank
-
-  const data = scales[currentYear];
-  const startHigh = data[gHigh].start; // higher rank has higher salary
-  const startLow  = data[gLow].start;
-  const endHigh   = data[gHigh].end;
-  const endLow    = data[gLow].end;
-
-  const startDiff = startHigh - startLow;
-  const endDiff   = endHigh - endLow;
-  const startPct  = ((startDiff / startLow) * 100).toFixed(1);
-  const endPct    = ((endDiff / endLow) * 100).toFixed(1);
-
-  label.innerHTML = `
-    <div class="title">গ্রেড ${gLow} vs ${gHigh}</div>
-    <div class="line">প্রারম্ভিক<br>
-      <span class="val">${format(startLow)} → ${format(startHigh)}</span><br>
-      <span class="val">Δ ${format(Math.abs(startDiff))} (${startPct}%)</span>
-    </div>
-    <div class="line" style="margin-top:6px">সর্বোচ্চ<br>
-      <span class="val">${format(endLow)} → ${format(endHigh)}</span><br>
-      <span class="val">Δ ${format(Math.abs(endDiff))} (${endPct}%)</span>
-    </div>
-  `;
-  label.style.display = 'block';
-  label.style.left = (xMid + 8) + 'px';
-  label.style.top  = ((y1 + y2) / 2) + 'px';
-}
-
-// Header sort
-document.querySelectorAll('th').forEach(th => {
-  th.addEventListener('click', () => {
-    const col = +th.dataset.col;
-    if (sortCol === col) sortAsc = !sortAsc;
-    else { sortCol = col; sortAsc = true; }
+  document.getElementById('yearToggle').addEventListener('change', function() {
+    currentYear = this.checked ? 2026 : 2015;
+    document.getElementById('label2026').classList.toggle('active', this.checked);
+    document.getElementById('label2015').classList.toggle('active', !this.checked);
+    selected = [];
     renderTable();
   });
-});
 
-// Year toggle
-document.getElementById('yearToggle').addEventListener('change', function() {
-  currentYear = this.checked ? 2026 : 2015;
-  document.getElementById('label2026').classList.toggle('active', this.checked);
-  document.getElementById('label2015').classList.toggle('active', !this.checked);
-  selected = [];
+  document.getElementById('tableWrap').addEventListener('scroll', drawConnector);
+  window.addEventListener('resize', drawConnector);
+
   renderTable();
-});
-
-document.getElementById('tableWrap').addEventListener('scroll', drawConnector);
-window.addEventListener('resize', drawConnector);
-
-renderTable();
+}
 </script>
 </body>
 </html>

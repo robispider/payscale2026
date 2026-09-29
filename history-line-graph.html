@@ -54,11 +54,12 @@
     max-width: 900px; margin: 0 auto;
   }
   .info strong { color: var(--yellow); }
+  .error {
+    color: #f87171; text-align: center; padding: 20px; font-size: 1rem;
+  }
 </style>
 </head>
 <body>
-
-<!-- nav.js automatically injects the menu here -->
 
 <h1>পে-স্কেলভিত্তিক ঐতিহাসিক বৃদ্ধি</h1>
 <p class="subtitle">প্রতিটি লাইন = একটি পে-স্কেল · নরমালাইজড %</p>
@@ -94,9 +95,10 @@
 <script src="nav.js"></script>
 <script>
 (function () {
-  if (!window.PayScaleData) {
+  // data.js থেকে – কোনো ডুপ্লিকেট নেই
+  if (!window.PayScaleData || !window.PayScaleData.starts || !window.PayScaleData.years) {
     document.body.insertAdjacentHTML('afterbegin',
-      '<p style="color:#f87171;text-align:center;padding:20px">data.js লোড হয়নি। ফাইল একই ফোল্ডারে আছে কিনা চেক করুন।</p>');
+      '<p class="error">data.js লোড হয়নি। নিশ্চিত করুন data.js একই ফোল্ডারে আছে।</p>');
     return;
   }
 

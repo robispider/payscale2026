@@ -37,7 +37,6 @@
     font-size: 0.92rem;
   }
 
-  /* Year Toggle */
   .switch-wrap {
     display: flex;
     justify-content: center;
@@ -77,7 +76,6 @@
   input:checked + .slider { background: var(--accent); }
   input:checked + .slider:before { transform: translateX(28px); }
 
-  /* Grade Pills */
   .pills-wrap {
     max-width: 960px;
     margin: 0 auto 24px;
@@ -109,7 +107,6 @@
     box-shadow: 0 0 0 3px rgba(56,189,248,0.3);
   }
 
-  /* Chart Container */
   .chart-container {
     max-width: 980px;
     margin: 0 auto;
@@ -192,15 +189,6 @@
     font-weight: 800;
   }
 
-  .zero-line {
-    position: absolute;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: #475569;
-    z-index: 1;
-  }
-
   .legend {
     display: flex;
     justify-content: center;
@@ -230,6 +218,12 @@
     max-width: 800px;
     margin-left: auto;
     margin-right: auto;
+  }
+  .error {
+    text-align: center;
+    color: #f87171;
+    padding: 20px;
+    font-size: 1rem;
   }
 
   @media (max-width: 600px) {
@@ -272,114 +266,130 @@
 </p>
 
 <script>
-const scales = {
-  2015: {
-    1: 78000, 2: 66000, 3: 56500, 4: 50000, 5: 43000,
-    6: 35500, 7: 29000, 8: 23000, 9: 22000, 10: 16000,
-    11: 12500, 12: 11300, 13: 11000, 14: 10200, 15: 9700,
-    16: 9300, 17: 9000, 18: 8800, 19: 8500, 20: 8250
-  },
-  2026: {
-    1: 156000, 2: 132000, 3: 113000, 4: 100000, 5: 86000,
-    6: 71000, 7: 58000, 8: 46000, 9: 44000, 10: 32000,
-    11: 25000, 12: 24300, 13: 24000, 14: 23500, 15: 22800,
-    16: 21900, 17: 21400, 18: 21000, 19: 20500, 20: 20000
-  }
-};
+// data.js থেকে প্রারম্ভিক বেতন – কোনো ডুপ্লিকেট নেই
+function buildScales() {
+  if (!window.PayScaleData) return null;
 
-let currentYear = 2026;
-let baseGrade = 9; // default
-
-function format(n) {
-  return n.toLocaleString('en-IN');
-}
-
-function renderPills() {
-  const wrap = document.getElementById('pills');
-  wrap.innerHTML = '';
-  for (let g = 1; g <= 20; g++) {
-    const pill = document.createElement('button');
-    pill.className = 'pill' + (g === baseGrade ? ' active' : '');
-    pill.textContent = `গ্রেড ${g}`;
-    pill.dataset.g = g;
-    pill.addEventListener('click', () => {
-      baseGrade = g;
-      document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
-      pill.classList.add('active');
-      renderChart();
-    });
-    wrap.appendChild(pill);
-  }
-}
-
-function renderChart() {
-  const data = scales[currentYear];
-  const baseSalary = data[baseGrade];
-  const barsEl = document.getElementById('bars');
-  barsEl.innerHTML = '';
-
-  document.getElementById('chartTitle').innerHTML =
-    `বেস: <span>গ্রেড ${baseGrade}</span> (প্রারম্ভিক ৳${format(baseSalary)}) এর তুলনায় অন্য গ্রেডের পার্থক্য`;
-
-  // Calculate all % differences
-  const diffs = [];
-  for (let g = 1; g <= 20; g++) {
-    const sal = data[g];
-    const pct = ((sal - baseSalary) / baseSalary) * 100;
-    diffs.push({ g, sal, pct });
+  if (window.PayScaleData.starts && window.PayScaleData.starts[2015] && window.PayScaleData.starts[2026]) {
+    return {
+      2015: window.PayScaleData.starts[2015],
+      2026: window.PayScaleData.starts[2026]
+    };
   }
 
-  // Find max abs for scaling
-  const maxAbs = Math.max(...diffs.map(d => Math.abs(d.pct)), 1);
-
-  diffs.forEach(d => {
-    const group = document.createElement('div');
-    group.className = 'bar-group' + (d.g === baseGrade ? ' base' : '');
-
-    const wrapper = document.createElement('div');
-    wrapper.className = 'bar-wrapper';
-
-    const bar = document.createElement('div');
-    bar.className = 'bar';
-
-    const heightPct = (Math.abs(d.pct) / maxAbs) * 85; // max 85% of container
-    bar.style.height = (d.g === baseGrade ? 4 : Math.max(heightPct, 2)) + '%';
-
-    if (d.pct > 0.05) bar.classList.add('positive');
-    else if (d.pct < -0.05) bar.classList.add('negative');
-    else bar.classList.add('zero');
-
-    const value = document.createElement('div');
-    value.className = 'bar-value';
-    if (d.g === baseGrade) {
-      value.textContent = 'বেস';
-    } else {
-      value.textContent = (d.pct >= 0 ? '+' : '') + d.pct.toFixed(1) + '%';
+  if (window.PayScaleData.full2026) {
+    const s2015 = {};
+    const s2026 = {};
+    for (let g = 1; g <= 20; g++) {
+      const d = window.PayScaleData.full2026[g];
+      if (d) {
+        s2015[g] = d.old[0];
+        s2026[g] = d.new[0];
+      }
     }
-    bar.appendChild(value);
+    return { 2015: s2015, 2026: s2026 };
+  }
 
-    wrapper.appendChild(bar);
-
-    const label = document.createElement('div');
-    label.className = 'bar-label';
-    label.textContent = d.g;
-
-    group.appendChild(wrapper);
-    group.appendChild(label);
-    barsEl.appendChild(group);
-  });
+  return null;
 }
 
-// Year toggle
-document.getElementById('yearToggle').addEventListener('change', function () {
-  currentYear = this.checked ? 2026 : 2015;
-  document.getElementById('label2026').classList.toggle('active', this.checked);
-  document.getElementById('label2015').classList.toggle('active', !this.checked);
-  renderChart();
-});
+const scales = buildScales();
 
-renderPills();
-renderChart();
+if (!scales) {
+  document.getElementById('chartTitle').innerHTML =
+    '<span class="error">data.js লোড হয়নি। নিশ্চিত করুন data.js একই ফোল্ডারে আছে।</span>';
+} else {
+  let currentYear = 2026;
+  let baseGrade = 9;
+
+  function format(n) {
+    return n.toLocaleString('en-IN');
+  }
+
+  function renderPills() {
+    const wrap = document.getElementById('pills');
+    wrap.innerHTML = '';
+    for (let g = 1; g <= 20; g++) {
+      const pill = document.createElement('button');
+      pill.className = 'pill' + (g === baseGrade ? ' active' : '');
+      pill.textContent = `গ্রেড ${g}`;
+      pill.dataset.g = g;
+      pill.addEventListener('click', () => {
+        baseGrade = g;
+        document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        renderChart();
+      });
+      wrap.appendChild(pill);
+    }
+  }
+
+  function renderChart() {
+    const data = scales[currentYear];
+    const baseSalary = data[baseGrade];
+    const barsEl = document.getElementById('bars');
+    barsEl.innerHTML = '';
+
+    document.getElementById('chartTitle').innerHTML =
+      `বেস: <span>গ্রেড ${baseGrade}</span> (প্রারম্ভিক ৳${format(baseSalary)}) এর তুলনায় অন্য গ্রেডের পার্থক্য`;
+
+    const diffs = [];
+    for (let g = 1; g <= 20; g++) {
+      const sal = data[g];
+      const pct = ((sal - baseSalary) / baseSalary) * 100;
+      diffs.push({ g, sal, pct });
+    }
+
+    const maxAbs = Math.max(...diffs.map(d => Math.abs(d.pct)), 1);
+
+    diffs.forEach(d => {
+      const group = document.createElement('div');
+      group.className = 'bar-group' + (d.g === baseGrade ? ' base' : '');
+
+      const wrapper = document.createElement('div');
+      wrapper.className = 'bar-wrapper';
+
+      const bar = document.createElement('div');
+      bar.className = 'bar';
+
+      const heightPct = (Math.abs(d.pct) / maxAbs) * 85;
+      bar.style.height = (d.g === baseGrade ? 4 : Math.max(heightPct, 2)) + '%';
+
+      if (d.pct > 0.05) bar.classList.add('positive');
+      else if (d.pct < -0.05) bar.classList.add('negative');
+      else bar.classList.add('zero');
+
+      const value = document.createElement('div');
+      value.className = 'bar-value';
+      if (d.g === baseGrade) {
+        value.textContent = 'বেস';
+      } else {
+        value.textContent = (d.pct >= 0 ? '+' : '') + d.pct.toFixed(1) + '%';
+      }
+      bar.appendChild(value);
+
+      wrapper.appendChild(bar);
+
+      const label = document.createElement('div');
+      label.className = 'bar-label';
+      label.textContent = d.g;
+
+      group.appendChild(wrapper);
+      group.appendChild(label);
+      barsEl.appendChild(group);
+    });
+  }
+
+  document.getElementById('yearToggle').addEventListener('change', function () {
+    currentYear = this.checked ? 2026 : 2015;
+    document.getElementById('label2026').classList.toggle('active', this.checked);
+    document.getElementById('label2015').classList.toggle('active', !this.checked);
+    renderChart();
+  });
+
+  renderPills();
+  renderChart();
+}
 </script>
 </body>
 </html>

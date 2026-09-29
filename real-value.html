@@ -190,6 +190,12 @@
     max-width: 820px;
     margin: 12px auto 0;
   }
+  .error {
+    text-align: center;
+    color: #f87171;
+    padding: 20px;
+    font-size: 1rem;
+  }
 
   @media (max-width: 600px) {
     h1 { font-size: 1.2rem; }
@@ -232,20 +238,34 @@
 </p>
 
 <script>
-// Starting salaries
-const start2015 = {
-  1:78000, 2:66000, 3:56500, 4:50000, 5:43000,
-  6:35500, 7:29000, 8:23000, 9:22000, 10:16000,
-  11:12500, 12:11300, 13:11000, 14:10200, 15:9700,
-  16:9300, 17:9000, 18:8800, 19:8500, 20:8250
-};
+// data.js থেকে প্রারম্ভিক বেতন – কোনো ডুপ্লিকেট নেই
+function getStarts() {
+  if (!window.PayScaleData) return null;
 
-const start2026 = {
-  1:156000, 2:132000, 3:113000, 4:100000, 5:86000,
-  6:71000, 7:58000, 8:46000, 9:44000, 10:32000,
-  11:25000, 12:24300, 13:24000, 14:23500, 15:22800,
-  16:21900, 17:21400, 18:21000, 19:20500, 20:20000
-};
+  if (window.PayScaleData.starts && window.PayScaleData.starts[2015] && window.PayScaleData.starts[2026]) {
+    return {
+      start2015: window.PayScaleData.starts[2015],
+      start2026: window.PayScaleData.starts[2026]
+    };
+  }
+
+  if (window.PayScaleData.full2026) {
+    const start2015 = {};
+    const start2026 = {};
+    for (let g = 1; g <= 20; g++) {
+      const d = window.PayScaleData.full2026[g];
+      if (d) {
+        start2015[g] = d.old[0];
+        start2026[g] = d.new[0];
+      }
+    }
+    return { start2015, start2026 };
+  }
+
+  return null;
+}
+
+const starts = getStarts();
 
 // Cumulative inflation factor 2015 → 2026
 // Based on compounded annual rates ≈ 102% total rise → multiplier 2.02
@@ -256,11 +276,12 @@ function format(n) {
 }
 
 function calcData() {
+  const { start2015, start2026 } = starts;
   const data = [];
   for (let g = 1; g <= 20; g++) {
     const old = start2015[g];
     const neu = start2026[g];
-    const adjustedOld = old * INFLATION_FACTOR;          // 2015 salary in 2026 money
+    const adjustedOld = old * INFLATION_FACTOR;
     const nominalPct = ((neu - old) / old) * 100;
     const realPct = ((neu - adjustedOld) / adjustedOld) * 100;
     const realGain = neu - adjustedOld;
@@ -279,12 +300,18 @@ function calcData() {
 }
 
 function render() {
+  if (!starts) {
+    document.getElementById('summary').innerHTML =
+      '<div class="error">data.js লোড হয়নি। নিশ্চিত করুন data.js একই ফোল্ডারে আছে।</div>';
+    document.getElementById('bars').innerHTML = '';
+    return;
+  }
+
   const mode = document.getElementById('viewMode').value;
   const data = calcData();
   const barsEl = document.getElementById('bars');
   barsEl.innerHTML = '';
 
-  // Summary
   const avgReal = data.reduce((s, d) => s + d.realPct, 0) / 20;
   const avgNominal = data.reduce((s, d) => s + d.nominalPct, 0) / 20;
   const positiveCount = data.filter(d => d.realPct > 0).length;
@@ -313,7 +340,6 @@ function render() {
       ? 'প্রতিটি গ্রেডের রিয়েল বেতন বৃদ্ধি (মূল্যস্ফীতি সমন্বিত)'
       : 'নমিনাল vs রিয়েল বৃদ্ধির তুলনা';
 
-  // Scaling
   const maxAbs = Math.max(
     ...data.map(d => Math.abs(d.realPct)),
     ...data.map(d => Math.abs(d.nominalPct)),
@@ -339,7 +365,6 @@ function render() {
       bar.appendChild(val);
       wrapper.appendChild(bar);
     } else {
-      // Both bars side by side (simplified: show real as main)
       const bar = document.createElement('div');
       bar.className = 'bar ' + (d.realPct >= 0 ? 'real-pos' : 'real-neg');
       const h = Math.min(Math.abs(d.realPct) / maxAbs * 88, 88);
@@ -361,7 +386,6 @@ function render() {
     barsEl.appendChild(group);
   });
 
-  // Legend
   document.getElementById('legend').innerHTML = `
     <div class="legend-item">
       <div class="legend-dot" style="background:#4ade80"></div> রিয়েল লাভ (মূল্যস্ফীতির চেয়ে বেশি)

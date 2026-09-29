@@ -124,6 +124,12 @@
     margin-left: auto;
     margin-right: auto;
   }
+  .error {
+    text-align: center;
+    color: #f87171;
+    padding: 20px;
+    font-size: 1rem;
+  }
 
   @media (max-width: 600px) {
     h1 { font-size: 1.2rem; }
@@ -169,25 +175,49 @@
 </p>
 
 <script>
-const start2015 = {
-  1: 78000, 2: 66000, 3: 56500, 4: 50000, 5: 43000,
-  6: 35500, 7: 29000, 8: 23000, 9: 22000, 10: 16000,
-  11: 12500, 12: 11300, 13: 11000, 14: 10200, 15: 9700,
-  16: 9300, 17: 9000, 18: 8800, 19: 8500, 20: 8250
-};
+// data.js থেকে প্রারম্ভিক বেতন – কোনো ডুপ্লিকেট নেই
+function getStarts() {
+  if (!window.PayScaleData) return null;
 
-const start2026 = {
-  1: 156000, 2: 132000, 3: 113000, 4: 100000, 5: 86000,
-  6: 71000, 7: 58000, 8: 46000, 9: 44000, 10: 32000,
-  11: 25000, 12: 24300, 13: 24000, 14: 23500, 15: 22800,
-  16: 21900, 17: 21400, 18: 21000, 19: 20500, 20: 20000
-};
+  // Prefer starts object if present
+  if (window.PayScaleData.starts && window.PayScaleData.starts[2015] && window.PayScaleData.starts[2026]) {
+    return {
+      start2015: window.PayScaleData.starts[2015],
+      start2026: window.PayScaleData.starts[2026]
+    };
+  }
+
+  // Fallback: derive from full2026
+  if (window.PayScaleData.full2026) {
+    const start2015 = {};
+    const start2026 = {};
+    for (let g = 1; g <= 20; g++) {
+      const d = window.PayScaleData.full2026[g];
+      if (d) {
+        start2015[g] = d.old[0];
+        start2026[g] = d.new[0];
+      }
+    }
+    return { start2015, start2026 };
+  }
+
+  return null;
+}
+
+const starts = getStarts();
 
 function format(n) {
   return n.toLocaleString('en-IN');
 }
 
 function render() {
+  if (!starts) {
+    document.getElementById('tbody').innerHTML =
+      '<tr><td colspan="6" class="error">data.js লোড হয়নি। নিশ্চিত করুন data.js একই ফোল্ডারে আছে।</td></tr>';
+    return;
+  }
+
+  const { start2015, start2026 } = starts;
   const rows = [];
   let totalErosion = 0;
   let countDown = 0;

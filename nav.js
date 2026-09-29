@@ -1,17 +1,15 @@
-// nav.js
 (function () {
   const links = [
-    { href: 'index.html',            label: 'ড্যাশবোর্ড' },
-       { href: 'payscale2026salarycalculator.html',         label: 'বেতন  নির্ধারণ' },
-    { href: 'fixation.html',         label: 'ধাপ নির্ধারণ' },
-    { href: 'grade-diff.html',       label: 'গ্রেড ব্যবধান' },
-    { href: 'base-compare.html',     label: 'প্রারম্ভিক বেতনের গ্রেডভিত্তিক পার্থক্য' },
-    { href: 'real-value.html',       label: 'মূল্যস্ফিতির তুলনায় বৃদ্ধি' },
-    { href: 'valueerosion.html',        label: 'প্রমোশন মূল্য' },
-    { href: 'grade-diff-history.html',     label: 'সব পেস্কেলের বৃদ্ধি ব্যবধান' },
-    { href: 'history-line-graph.html', label: 'সব পেস্কেলের বৃদ্ধি গ্রাফ' },
-    { href: '9th-payscale-2026.pdf', label: 'পেস্কেল 25026 গেজেট' }
-
+    { href: 'index.html',                        label: 'ড্যাশবোর্ড' },
+    { href: 'payscale2026salarycalculator.html', label: 'বেতন ক্যালকুলেটর' },
+    { href: 'fixation.html',                     label: 'ধাপ নির্ধারণ' },
+    { href: 'grade-diff.html',                   label: 'গ্রেড ব্যবধান' },
+    { href: 'base-compare.html',                 label: 'প্রারম্ভিক তুলনা' },
+    { href: 'real-value.html',                   label: 'রিয়েল বৃদ্ধি' },
+    { href: 'valueerosion.html',                 label: 'প্রমোশন মূল্য' },
+    { href: 'grade-diff-history.html',           label: 'ঐতিহাসিক ব্যবধান' },
+    { href: 'history-line-graph.html',           label: 'ঐতিহাসিক গ্রাফ' },
+    { href: '9th-payscale-2026.pdf',             label: 'গেজেট পিডিএফ' }
   ];
 
   const current = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
@@ -23,7 +21,6 @@
     return `<a href="${l.href}" class="${active}">${l.label}</a>`;
   }).join('');
 
-  // style
   const style = document.createElement('style');
   style.textContent = `
     #main-nav {
@@ -40,7 +37,5 @@
     }
   `;
   document.head.appendChild(style);
-
-  // insert at top of body
   document.body.insertBefore(nav, document.body.firstChild);
 })();
