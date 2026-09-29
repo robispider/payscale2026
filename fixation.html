@@ -141,8 +141,10 @@
 </head>
 <body>
 
+<!-- এক্সটার্নাল স্ক্রিপ্টস (calculator.js যুক্ত করা হয়েছে) -->
 <script src="data.js"></script>
 <script src="nav.js"></script>
+<script src="calculator.js"></script>
 
 <h1>৯ম জাতীয় বেতনস্কেল ২০২৬ – ধাপভিত্তিক নির্ধারণ</h1>
 <p class="subtitle">সরকারি গেজেট (১৭ সেপ্টেম্বর ২০২৬) অনুসারে · শুধু বেস নির্ধারণ</p>
@@ -177,32 +179,13 @@
 </p>
 
 <script>
-// Prefer shared data if available, otherwise use embedded gazette steps
-const scales = (window.PayScaleData && window.PayScaleData.full2026)
-  ? window.PayScaleData.full2026
-  : null;
-function findNextOrExact(amount, newSteps) {
-  for (let i = 0; i < newSteps.length; i++) {
-    if (newSteps[i] >= amount) return { step: i + 1, pay: newSteps[i] };
-  }
-  return { step: newSteps.length, pay: newSteps[newSteps.length - 1] };
-}
+const scales = (window.PayScaleData && window.PayScaleData.full2026) ? window.PayScaleData.full2026 : null;
 
-function fixPay(oldBasic, g) {
-  const data = scales[g];
-  const oldSteps = data.old;
-  const newSteps = data.new;
-  const oldStart = oldSteps[0];
-  const newStart = newSteps[0];
-
-  if (oldBasic === oldStart) {
-    return { baseStep: 1, basePay: newSteps[0] };
-  }
-  const delta = oldBasic - oldStart;
-  const provisional = newStart + delta;
-  const matched = findNextOrExact(provisional, newSteps);
-  return { baseStep: matched.step, basePay: matched.pay };
-}
+// ফলব্যাক ডেটা, যদি data.js এ AllowanceData না থাকে (লাইব্রেরি ক্র্যাশ রোধ করতে)
+const fallbackAllowData = window.AllowanceData || {
+  hra2015: [{ maxBasic: Infinity, dhaka: { pct: 0, min: 0 }, city: { pct: 0, min: 0 }, other: { pct: 0, min: 0 } }],
+  hra2026: [{ minGrade: 1, maxGrade: 20, dhaka: { pct: 0 }, city: { pct: 0 }, other: { pct: 0 } }]
+};
 
 const sel = document.getElementById('gradeSelect');
 for (let g = 1; g <= 20; g++) {
@@ -219,6 +202,11 @@ function getUrlGrade() {
 sel.value = getUrlGrade() || 9;
 
 function renderTable() {
+  if (!scales || !window.SalaryCalculator) {
+    document.getElementById('tableBody').innerHTML = '<tr><td colspan="5" style="color:red;padding:20px;">ডেটা বা লাইব্রেরি (calculator.js) লোড হয়নি!</td></tr>';
+    return;
+  }
+
   const g = parseInt(sel.value);
   const data = scales[g];
   const oldSteps = data.old;
@@ -237,16 +225,33 @@ function renderTable() {
   tbody.innerHTML = '';
 
   oldSteps.forEach((oldPay, idx) => {
-    const result = fixPay(oldPay, g);
-    const baseIncrease = result.basePay - oldPay;
-    const basePct = ((baseIncrease / oldPay) * 100).toFixed(1);
+    // লাইব্রেরির জন্য প্রয়োজনীয় প্যারামিটার (এই পেজের জন্য ভাতা প্রযোজ্য নয়, তাই ডামি ভ্যালু দেওয়া হলো)
+    const params = {
+      g: g,
+      oldBasic: oldPay,
+      area: 'dhaka',
+      age: 'under50',
+      govHouse: false,
+      wantTiffin: false,
+      scales: scales,
+      allowData: fallbackAllowData
+    };
+
+    // লাইব্রেরি থেকে হিসাব নিয়ে আসা হলো
+    const result = window.SalaryCalculator.calculate(params);
+    
+    // শুধু বেস ফিক্সেশনের ডেটা এক্সট্রাক্ট করা হলো
+    const baseStep = result.base.step;
+    const basePay = result.base.pay;
+    const baseIncrease = result.fixIncrease;
+    const basePct = result.fixPct;
 
     const tr = document.createElement('tr');
     tr.innerHTML =
       '<td>' + (idx + 1) + '</td>' +
       '<td class="old">' + oldPay.toLocaleString('en-IN') + '</td>' +
-      '<td class="base-step">' + result.baseStep + '</td>' +
-      '<td class="base-pay">' + result.basePay.toLocaleString('en-IN') + '</td>' +
+      '<td class="base-step">' + baseStep + '</td>' +
+      '<td class="base-pay">' + basePay.toLocaleString('en-IN') + '</td>' +
       '<td class="base-diff">' +
         '<span class="amount">+' + baseIncrease.toLocaleString('en-IN') + '</span>' +
         '<span class="pct">(+' + basePct + '%)</span>' +

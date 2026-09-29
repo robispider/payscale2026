@@ -127,6 +127,7 @@
 
 <script src="data.js"></script>
 <script src="nav.js"></script>
+<script src="calculator.js"></script>
 
 <h1>৯ম পে ফিক্সেশন + ধাপভিত্তিক বেতন</h1>
 <p class="subtitle">অনুচ্ছেদ ৫ (ফিক্সেশন) · অনুচ্ছেদ ৯(২) (১ জুলাই ২৬ ইনক্রিমেন্ট) · সারণি-১ বাস্তবায়ন</p>
@@ -181,6 +182,7 @@
 <script>
 const scales = (window.PayScaleData && window.PayScaleData.full2026) ? window.PayScaleData.full2026 : null;
 
+// Fallback allowData in case it's not defined in data.js
 const allowData = window.AllowanceData || {
   hra2015: [
     { maxBasic: 9700, dhaka: { pct: 65, min: 5600 }, city: { pct: 55, min: 5000 }, other: { pct: 50, min: 4500 } },
@@ -196,61 +198,11 @@ const allowData = window.AllowanceData || {
   ]
 };
 
-if (!scales) {
+if (!scales || !window.SalaryCalculator) {
   document.getElementById('resultBody').innerHTML =
-    '<p class="error">data.js লোড হয়নি। নিশ্চিত করুন data.js একই ফোল্ডারে আছে।</p>';
+    '<p class="error">লাইব্রেরি বা ডেটা লোড হয়নি। নিশ্চিত করুন data.js এবং calculator.js একই ফোল্ডারে আছে।</p>';
 } else {
   function fmt(n) { return Math.round(n).toLocaleString('en-IN'); }
-
-  // পুরনো স্কেলে ইনক্রিমেন্ট যোগ করে সঠিক বেসিক বের করার ফাংশন (পুরনো ভাতার হিসাবের জন্য)
-  function getOldBasicAt(steps, currentBasic, incrementsCount) {
-    const idx = steps.indexOf(currentBasic);
-    if (idx === -1) return currentBasic;
-    return steps[Math.min(idx + incrementsCount, steps.length - 1)];
-  }
-
-  function findNextOrExact(amount, steps) {
-    for (let i = 0; i < steps.length; i++) {
-      if (steps[i] >= amount) return { step: i + 1, pay: steps[i] };
-    }
-    return { step: steps.length, pay: steps[steps.length - 1] };
-  }
-
-  function fixBase(oldBasic, g) {
-    const d = scales[g];
-    if (oldBasic === d.old[0]) {
-      return { step: 1, pay: d.new[0], rule: 'ক', delta: 0, provisional: d.new[0] };
-    }
-    const delta = oldBasic - d.old[0];
-    const provisional = d.new[0] + delta;
-    const m = findNextOrExact(provisional, d.new);
-    return {
-      step: m.step,
-      pay: m.pay,
-      rule: d.new.includes(provisional) ? 'খ (হুবহু)' : 'খ (পরবর্তী উচ্চতর)',
-      delta,
-      provisional
-    };
-  }
-
-  function addIncrement(baseStep, g) {
-    const steps = scales[g].new;
-    if (baseStep < steps.length) {
-      return { step: baseStep + 1, pay: steps[baseStep] };
-    }
-    return { step: baseStep, pay: steps[baseStep - 1] };
-  }
-
-  function phaseList(g) {
-    const p1 = g <= 9 ? 40 : 50;
-    const p2 = g <= 9 ? 70 : 75;
-    return [
-      { id: 1, label: '১ম ধাপ (১ জুলাই ২০২৬ - ৩১ ডিসেম্বর ২০২৬)', note: 'ফিক্সেশন ও ১ জুলাই ২৬ ইনক্রিমেন্টসহ', pct: p1, isFull: false, fullAllow: false },
-      { id: 2, label: '২য় ধাপ (১ জানুয়ারি ২০২৭ - ৩০ জুন ২০২৭)', note: 'অর্ধেক বাড়তি', pct: p2, isFull: false, fullAllow: false },
-      { id: 3, label: '৩য় ধাপ (১ জুলাই ২০২৭ থেকে)', note: '১০০% ও ২০২৭ ইনক্রিমেন্টসহ', pct: 100, isFull: true, fullAllow: false },
-      { id: 4, label: '৪র্থ ধাপ (১ জানুয়ারি ২০২৮ থেকে)', note: 'পূর্ণাঙ্গ ও ২০২৭ ইনক্রিমেন্টসহ', pct: 100, isFull: true, fullAllow: true }
-    ];
-  }
 
   const gradeSel = document.getElementById('grade');
   const paySel = document.getElementById('oldBasic');
@@ -277,140 +229,64 @@ if (!scales) {
   document.getElementById('calcBtn').addEventListener('click', calc);
   fillPay();
 
-  function calc() {
-    const g = +gradeSel.value;
-    const oldBasic = +paySel.value;
-    const area = document.getElementById('area').value;
-    const age = document.getElementById('age').value;
-    const govHouse = document.getElementById('govHouse').checked;
-    const wantTiffin = document.getElementById('tiffin').checked;
-
-    // --- ১. প্রকৃত বেতন নির্ধারণ (Actual Fixation & Increments) ---
-    const base = fixBase(oldBasic, g);
-    const withInc26 = addIncrement(base.step, g); 
-    const targetNew26 = withInc26.pay; 
-
-    const withInc27 = addIncrement(withInc26.step, g);
-    const targetNew27 = withInc27.pay; 
-
-    const fixIncrease = base.pay - oldBasic;
-    const fixPct = ((fixIncrease / oldBasic) * 100).toFixed(1);
-    const incAmount = targetNew26 - base.pay;
-    
-    // পুরনো ভাতার হিসাবের জন্য পুরনো স্কেলের ইনক্রিমেন্টকৃত বেসিক
-    const oldSteps = scales[g].old;
-    const oldJul26Basic = getOldBasicAt(oldSteps, oldBasic, 1);
-    const oldJul27Basic = getOldBasicAt(oldSteps, oldBasic, 2);
-
-    // --- ২. অনুপাতিক আদর্শ বেতন নির্ধারণ (Ideal Fixation once, then step-by-step increments) ---
-    const oldStart = oldSteps[0];
-    const newStart = scales[g].new[0];
-    const ratio = newStart / oldStart;
-
-    // প্রথমে ৩০ জুন ২০২৬-এর বেসিককে অনুপাত দিয়ে গুণ করে নতুন স্কেলে একবারই Base Step ফিক্স করা হলো
-    const idealBaseRaw = Math.round(oldBasic * ratio);
-    const idealBase = findNextOrExact(idealBaseRaw, scales[g].new);
-
-    // এরপর ১ জুলাই ২০২৬-এ ১ ধাপ ইনক্রিমেন্ট (Next Step)
-    const idealInc26 = addIncrement(idealBase.step, g);
-    const idealJul26Full = idealInc26.pay;
-
-    // এরপর ১ জুলাই ২০২৭-এ আরও ১ ধাপ ইনক্রিমেন্ট (Next Step)
-    const idealInc27 = addIncrement(idealInc26.step, g);
-    const idealJul27Full = idealInc27.pay;
-
-    const phases = phaseList(g);
-
-    function allowancesFor(payAmt, isOldRates, currentOldBasicRef) {
-      if (isOldRates) {
-        let slab = allowData.hra2015.find(s => currentOldBasicRef <= s.maxBasic);
-        let rawHra = Math.round(currentOldBasicRef * slab[area].pct / 100);
-        let finalHra = govHouse ? 0 : Math.max(rawHra, slab[area].min); 
-        
-        const med = 1500; 
-        const tiff = (wantTiffin && g >= 11) ? 200 : 0; 
-        return { hra: finalHra, medical: med, tiffin: tiff, total: finalHra + med + tiff };
-      } else {
-        let slab = allowData.hra2026.find(s => g >= s.minGrade && g <= s.maxGrade);
-        let finalHra = govHouse ? 0 : Math.round(payAmt * slab[area].pct / 100);
-        
-        const med = age === 'under50' ? 3000 : 4000; 
-        const tiff = (wantTiffin && g >= 11) ? 500 : 0;
-        return { hra: finalHra, medical: med, tiffin: tiff, total: finalHra + med + tiff };
-      }
+  // Helper for UI generation
+  function allowLines(alw, govHouse) {
+    let lines = '';
+    if (alw.hra > 0) {
+      lines += '<div style="color:#fb923c;font-size:0.76rem;font-weight:600">বাড়ি ভাড়া ৳' + fmt(alw.hra) + '</div>';
+    } else if (govHouse) {
+      lines += '<div style="color:#64748b;font-size:0.76rem">বাড়ি ভাড়া — (সরকারি বাসা)</div>';
     }
+    lines += '<div style="color:#fde047;font-size:0.76rem;font-weight:600">চিকিৎসা ৳' + fmt(alw.medical) + '</div>';
+    if (alw.tiffin > 0) {
+      lines += '<div style="color:#a78bfa;font-size:0.76rem;font-weight:600">টিফিন ৳' + fmt(alw.tiffin) + '</div>';
+    }
+    return lines;
+  }
+
+  function calc() {
+    const params = {
+      g: +gradeSel.value,
+      oldBasic: +paySel.value,
+      area: document.getElementById('area').value,
+      age: document.getElementById('age').value,
+      govHouse: document.getElementById('govHouse').checked,
+      wantTiffin: document.getElementById('tiffin').checked,
+      scales: scales,
+      allowData: allowData
+    };
+
+    // CALLING THE EXTERNAL LIBRARY
+    const res = window.SalaryCalculator.calculate(params);
 
     const stepsHtml =
       '<div class="steps-row">' +
-        '<div class="step-box"><div class="n">১ · পুরনো</div><div class="v">৳' + fmt(oldBasic) + '</div></div>' +
-        '<div class="step-box"><div class="n">২ · Δ</div><div class="v">' + (base.delta ? fmt(base.delta) : '—') + '</div></div>' +
-        '<div class="step-box"><div class="n">৩ · প্রাথমিক</div><div class="v">৳' + fmt(base.provisional || base.pay) + '</div></div>' +
-        '<div class="step-box"><div class="n">৪ · অনু·৫ ফিক্স</div><div class="v">৳' + fmt(base.pay) + '</div></div>' +
-        '<div class="step-box hl"><div class="n">৫ · অনু·৯(২) +ইনক</div><div class="v">৳' + fmt(targetNew26) + '</div></div>' +
+        '<div class="step-box"><div class="n">১ · পুরনো</div><div class="v">৳' + fmt(params.oldBasic) + '</div></div>' +
+        '<div class="step-box"><div class="n">২ · Δ</div><div class="v">' + (res.base.delta ? fmt(res.base.delta) : '—') + '</div></div>' +
+        '<div class="step-box"><div class="n">৩ · প্রাথমিক</div><div class="v">৳' + fmt(res.base.provisional || res.base.pay) + '</div></div>' +
+        '<div class="step-box"><div class="n">৪ · অনু·৫ ফিক্স</div><div class="v">৳' + fmt(res.base.pay) + '</div></div>' +
+        '<div class="step-box hl"><div class="n">৫ · অনু·৯(২) +ইনক</div><div class="v">৳' + fmt(res.targetNew26) + '</div></div>' +
       '</div>';
 
-    function allowLines(alw) {
-      let lines = '';
-      if (alw.hra > 0) {
-        lines += '<div style="color:#fb923c;font-size:0.76rem;font-weight:600">বাড়ি ভাড়া ৳' + fmt(alw.hra) + '</div>';
-      } else if (govHouse) {
-        lines += '<div style="color:#64748b;font-size:0.76rem">বাড়ি ভাড়া — (সরকারি বাসা)</div>';
-      }
-      lines += '<div style="color:#fde047;font-size:0.76rem;font-weight:600">চিকিৎসা ৳' + fmt(alw.medical) + '</div>';
-      if (alw.tiffin > 0) {
-        lines += '<div style="color:#a78bfa;font-size:0.76rem;font-weight:600">টিফিন ৳' + fmt(alw.tiffin) + '</div>';
-      }
-      return lines;
-    }
-
-    const phaseRows = phases.map(p => {
-      let pay, idealPhasePay, oldRefBasic;
-
-      if (p.id === 1 || p.id === 2) {
-        pay = oldBasic + Math.round((targetNew26 - oldBasic) * p.pct / 100);
-        idealPhasePay = oldBasic + Math.round((idealJul26Full - oldBasic) * p.pct / 100);
-        oldRefBasic = oldJul26Basic; 
-      } else if (p.id === 3) {
-        pay = targetNew27;
-        idealPhasePay = idealJul27Full; 
-        oldRefBasic = oldJul27Basic;    
-      } else {
-        pay = targetNew27; 
-        idealPhasePay = idealJul27Full;
-        oldRefBasic = oldJul27Basic;    
-      }
-
-      const isOld = !p.fullAllow;
-      const alw = allowancesFor(pay, isOld, oldRefBasic);
-      const phaseGross = pay + alw.total;
-
-      const ratioAlw = allowancesFor(idealPhasePay, isOld, oldRefBasic);
-      const ratioGross = idealPhasePay + ratioAlw.total;
-      
-      const basicLoss = idealPhasePay - pay;
-      const grossLoss = ratioGross - phaseGross;
-
+    const phaseRows = res.phaseResults.map(p => {
       let leftHtml = '';
       let rightHtml = '';
 
-      if (basicLoss > 1) { // Ideal pay is structurally aligned to steps, any gap > 1 is a valid loss
-        // বাম কলাম: অদৃশ্য স্পেসার দিয়ে ডান কলামের ক্ষতি লেখার সাথে উচ্চতা ঠিক রাখা হয়েছে
+      if (p.basicLoss > 1) { 
         leftHtml = 
-          '<div style="color:#38bdf8;font-weight:700">মূল ৳' + fmt(pay) + '<br><span style="font-size:0.72rem;visibility:hidden">.</span></div>' +
-          allowLines(alw) +
-          '<div style="color:#4ade80;font-size:0.95rem;font-weight:800;margin-top:3px;border-top:1px solid var(--border);padding-top:3px">গ্রস ৳' + fmt(phaseGross) + '<br><span style="font-size:0.75rem;visibility:hidden">.</span></div>';
+          '<div style="color:#38bdf8;font-weight:700">মূল ৳' + fmt(p.pay) + '<br><span style="font-size:0.72rem;visibility:hidden">.</span></div>' +
+          allowLines(p.alw, params.govHouse) +
+          '<div style="color:#4ade80;font-size:0.95rem;font-weight:800;margin-top:3px;border-top:1px solid var(--border);padding-top:3px">গ্রস ৳' + fmt(p.phaseGross) + '<br><span style="font-size:0.75rem;visibility:hidden">.</span></div>';
 
-        // ডান কলাম: মূল বেতনের নিচে "বেসিক ক্ষতি" এবং গ্রস বেতনের নিচে "গ্রস ক্ষতি"
         rightHtml = 
-          '<div style="color:#38bdf8;font-weight:700">মূল ৳' + fmt(idealPhasePay) + '<br><span style="color:#f87171;font-size:0.72rem;font-weight:600">বেসিক ক্ষতি −৳' + fmt(basicLoss) + '</span></div>' +
-          allowLines(ratioAlw) +
-          '<div style="color:#4ade80;font-size:0.95rem;font-weight:800;margin-top:3px;border-top:1px solid var(--border);padding-top:3px">গ্রস ৳' + fmt(ratioGross) + '<br><span style="color:#f87171;font-size:0.75rem;font-weight:700">গ্রস ক্ষতি −৳' + fmt(grossLoss) + '</span></div>';
+          '<div style="color:#38bdf8;font-weight:700">মূল ৳' + fmt(p.idealPhasePay) + '<br><span style="color:#f87171;font-size:0.72rem;font-weight:600">বেসিক ক্ষতি −৳' + fmt(p.basicLoss) + '</span></div>' +
+          allowLines(p.ratioAlw, params.govHouse) +
+          '<div style="color:#4ade80;font-size:0.95rem;font-weight:800;margin-top:3px;border-top:1px solid var(--border);padding-top:3px">গ্রস ৳' + fmt(p.ratioGross) + '<br><span style="color:#f87171;font-size:0.75rem;font-weight:700">গ্রস ক্ষতি −৳' + fmt(p.grossLoss) + '</span></div>';
       } else {
-        // কোনো ক্ষতি নেই
         leftHtml = 
-          '<div style="color:#38bdf8;font-weight:700">মূল ৳' + fmt(pay) + '</div>' +
-          allowLines(alw) +
-          '<div style="color:#4ade80;font-size:0.95rem;font-weight:800;margin-top:3px;border-top:1px solid var(--border);padding-top:3px">গ্রস ৳' + fmt(phaseGross) + '</div>';
+          '<div style="color:#38bdf8;font-weight:700">মূল ৳' + fmt(p.pay) + '</div>' +
+          allowLines(p.alw, params.govHouse) +
+          '<div style="color:#4ade80;font-size:0.95rem;font-weight:800;margin-top:3px;border-top:1px solid var(--border);padding-top:3px">গ্রস ৳' + fmt(p.phaseGross) + '</div>';
           
         rightHtml = '<div style="color:#4ade80;font-size:0.85rem;font-weight:600;margin-top:4px">সমান / বেশি</div>';
       }
@@ -422,16 +298,16 @@ if (!scales) {
         '<td class="amt" style="vertical-align:top">' + rightHtml + '</td></tr>';
     }).join('');
 
-    let subParts = 'ধাপ ' + withInc26.step + ' · পুরনো ৳' + fmt(oldBasic);
-    subParts += '<br>ফিক্সেশন বৃদ্ধি +' + fmt(fixIncrease) + ' (+' + fixPct + '%)';
-    if (incAmount > 0) {
-      subParts += ' · ইনক্রিমেন্ট +' + fmt(incAmount);
+    let subParts = 'ধাপ ' + res.withInc26.step + ' · পুরনো ৳' + fmt(params.oldBasic);
+    subParts += '<br>ফিক্সেশন বৃদ্ধি +' + fmt(res.fixIncrease) + ' (+' + res.fixPct + '%)';
+    if (res.incAmount > 0) {
+      subParts += ' · ইনক্রিমেন্ট +' + fmt(res.incAmount);
     }
 
     document.getElementById('resultBody').innerHTML =
       '<div class="hero">' +
         '<div class="label">৯ম স্কেলে কার্যকর পূর্ণ মূল বেতন (ফিক্সেশন + ১ জুলাই ২৬ ইনক্রিমেন্ট)</div>' +
-        '<div class="value">৳' + fmt(targetNew26) + '</div>' +
+        '<div class="value">৳' + fmt(res.targetNew26) + '</div>' +
         '<div class="sub">' + subParts + '</div>' +
       '</div>' +
 
@@ -446,8 +322,8 @@ if (!scales) {
 
       '<div class="note">' +
         '<strong>গেজেট টাইমলাইন ও নিয়মাবলি:</strong><br>' +
-        '• <strong>অনুচ্ছেদ ৫ (ফিক্সেশন):</strong> বেস ফিক্সেশন → ৳' + fmt(base.pay) + ' (ধাপ ' + base.step + ', নিয়ম ' + base.rule + ')<br>' +
-        '• <strong>অনুচ্ছেদ ৯(২):</strong> ১ জুলাই ২০২৬-এ ১টি ইনক্রিমেন্ট → ৳' + fmt(targetNew26) + ' (ধাপ ' + withInc26.step + ')<br>' +
+        '• <strong>অনুচ্ছেদ ৫ (ফিক্সেশন):</strong> বেস ফিক্সেশন → ৳' + fmt(res.base.pay) + ' (ধাপ ' + res.base.step + ', নিয়ম ' + res.base.rule + ')<br>' +
+        '• <strong>অনুচ্ছেদ ৯(২):</strong> ১ জুলাই ২০২৬-এ ১টি ইনক্রিমেন্ট → ৳' + fmt(res.targetNew26) + ' (ধাপ ' + res.withInc26.step + ')<br>' +
         '• ১ম ও ২য় ধাপে শতাংশের হিসাব এই <strong>ইনক্রিমেন্টসহ</strong> পূর্ণ মূল বেতনের ওপর করা হয়েছে। ৩য় ও ৪র্থ ধাপে ২০২৭ সালের ইনক্রিমেন্ট যুক্ত করা হয়েছে।<br>' +
         '• ১-৩ ধাপে ভাতা ২০১৫-এর পুরনো হারেই (ন্যূনতম সীমা বিবেচনা করে) দেয়া হয়েছে, এবং পূর্ণ নতুন ভাতা ৪র্থ ধাপ থেকে কার্যকর দেখানো হয়েছে।' +
       '</div>';
