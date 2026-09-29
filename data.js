@@ -36,3 +36,20 @@ window.PayScaleData = {
     20:{old:[8250,8670,9110,9570,10050,10560,11090,11650,12240,12860,13510,14190,14900,15650,16440,17270,18140,19050,20010], new:[20000,21000,22100,23200,24400,25600,26900,28200,29600,31100,32600,34300,36000,37800,39700,41700,43800,46000,48400]}
   }
 };
+
+window.AllowanceData = {
+  // ২০১৫ সালের গেজেট অনুযায়ী (মূল বেতনের স্লাব ভিত্তিক + ন্যূনতম সীমা)
+  hra2015: [
+    { maxBasic: 9700,     dhaka: { pct: 65, min: 5600 }, city: { pct: 55, min: 5000 }, other: { pct: 50, min: 4500 } },
+    { maxBasic: 16000,    dhaka: { pct: 60, min: 6400 }, city: { pct: 50, min: 5400 }, other: { pct: 45, min: 4800 } },
+    { maxBasic: 35500,    dhaka: { pct: 55, min: 9600 }, city: { pct: 45, min: 8000 }, other: { pct: 40, min: 7000 } },
+    { maxBasic: Infinity, dhaka: { pct: 50, min: 19500 }, city: { pct: 40, min: 16000 }, other: { pct: 35, min: 13800 } }
+  ],
+  // ২০২৬ সালের প্রস্তাবিত সারণি অনুযায়ী (গ্রেড ভিত্তিক)
+  hra2026: [
+    { minGrade: 16, maxGrade: 20, dhaka: { pct: 60 }, city: { pct: 50 }, other: { pct: 45 } },
+    { minGrade: 10, maxGrade: 15, dhaka: { pct: 50 }, city: { pct: 40 }, other: { pct: 35 } },
+    { minGrade: 5,  maxGrade: 9,  dhaka: { pct: 45 }, city: { pct: 35 }, other: { pct: 30 } },
+    { minGrade: 1,  maxGrade: 4,  dhaka: { pct: 40 }, city: { pct: 30 }, other: { pct: 25 } }
+  ]
+};

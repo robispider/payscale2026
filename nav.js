@@ -38,4 +38,23 @@
   `;
   document.head.appendChild(style);
   document.body.insertBefore(nav, document.body.firstChild);
+
+  // --- GOOGLE ANALYTICS AUTO-INTEGRATION ---
+  const gaId = 'G-82EZ6X0KK6';
+
+  // 1. Dynamically create and append the gtag.js script library
+  const gaScript = document.createElement('script');
+  gaScript.async = true;
+  gaScript.src = `https://googletagmanager.com{gaId}`;
+  document.head.appendChild(gaScript);
+
+  // 2. Initialize the global dataLayer and gtag function configurations
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = function() {
+    window.dataLayer.push(arguments);
+  };
+  
+  // 3. Fire the initial tracking configurations
+  window.gtag('js', new Date());
+  window.gtag('config', gaId);
 })();
